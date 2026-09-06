@@ -32,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
@@ -59,11 +61,13 @@ fun AppSegmentedControl(
     if (options.isEmpty()) return
 
     val haptics = LocalHapticFeedback.current
+    val largeFont = LocalDensity.current.fontScale >= 1.3f
+    val controlHeight = if (largeFont) 56.dp else AppDimens.compactControlHeight
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(AppDimens.compactControlHeight)
+            .height(controlHeight)
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
@@ -129,15 +133,21 @@ fun AppSegmentedControl(
                                     onSelect(index)
                                 }
                             },
-                        ),
+                        )
+                        .padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = option,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = if (largeFont) {
+                            MaterialTheme.typography.labelMedium
+                        } else {
+                            MaterialTheme.typography.bodyMedium
+                        },
                         fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         color = contentColor,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
