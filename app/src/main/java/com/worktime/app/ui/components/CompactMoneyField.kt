@@ -40,8 +40,9 @@ import androidx.compose.ui.unit.dp
 import com.worktime.app.ui.format.sanitizeMoneyInput
 
 /**
- * Shared visual chrome for every compact inline numeric editor. Error has priority,
- * focus uses the primary role and the idle field falls back to the neutral outline.
+ * Shared visual chrome for compact inline numeric editors. The field is deliberately
+ * inset from its host row: a quiet filled surface while idle, with a thin primary/error
+ * outline only when the state needs attention.
  */
 @Composable
 fun CompactInputChrome(
@@ -54,7 +55,7 @@ fun CompactInputChrome(
         targetValue = when {
             isError -> MaterialTheme.colorScheme.error
             focused -> MaterialTheme.colorScheme.primary
-            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.82f)
+            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
         },
         animationSpec = tween(
             durationMillis = AppMotion.FastMillis,
@@ -62,16 +63,28 @@ fun CompactInputChrome(
         ),
         label = "compact-input-border",
     )
+    val containerColor by animateColorAsState(
+        targetValue = if (focused || isError) {
+            MaterialTheme.colorScheme.surfaceContainerLowest
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.42f)
+        },
+        animationSpec = tween(
+            durationMillis = AppMotion.FastMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "compact-input-container",
+    )
 
     Surface(
         modifier = modifier
             .width(AppDimens.compactFieldWidth)
             .height(AppDimens.compactFieldHeight),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        shape = MaterialTheme.shapes.extraSmall,
+        color = containerColor,
         tonalElevation = 0.dp,
         border = BorderStroke(
-            width = if (focused || isError) 1.5.dp else 1.dp,
+            width = if (focused || isError) 1.25.dp else 1.dp,
             color = borderColor,
         ),
     ) {
