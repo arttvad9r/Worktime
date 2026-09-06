@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
@@ -40,9 +41,11 @@ import androidx.compose.ui.unit.dp
 import com.worktime.app.ui.format.sanitizeMoneyInput
 
 /**
- * Shared visual chrome for compact inline numeric editors. The field is deliberately
- * inset from its host row: a quiet filled surface while idle, with a thin primary/error
- * outline only when the state needs attention.
+ * Shared visual chrome for compact inline numeric editors.
+ *
+ * The host row owns the large touch/layout rhythm. The painted editor is intentionally
+ * much smaller: idle state is only a quiet fill, while focus/error adds a thin outline.
+ * This avoids the nested-card look that made numeric fields dominate their labels.
  */
 @Composable
 fun CompactInputChrome(
@@ -55,7 +58,7 @@ fun CompactInputChrome(
         targetValue = when {
             isError -> MaterialTheme.colorScheme.error
             focused -> MaterialTheme.colorScheme.primary
-            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+            else -> Color.Transparent
         },
         animationSpec = tween(
             durationMillis = AppMotion.FastMillis,
@@ -67,7 +70,7 @@ fun CompactInputChrome(
         targetValue = if (focused || isError) {
             MaterialTheme.colorScheme.surfaceContainerLowest
         } else {
-            MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.42f)
+            MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.30f)
         },
         animationSpec = tween(
             durationMillis = AppMotion.FastMillis,
@@ -83,15 +86,16 @@ fun CompactInputChrome(
         shape = MaterialTheme.shapes.extraSmall,
         color = containerColor,
         tonalElevation = 0.dp,
-        border = BorderStroke(
-            width = if (focused || isError) 1.25.dp else 1.dp,
-            color = borderColor,
-        ),
+        border = if (focused || isError) {
+            BorderStroke(width = 1.dp, color = borderColor)
+        } else {
+            null
+        },
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 6.dp),
             contentAlignment = Alignment.Center,
             content = content,
         )
