@@ -17,8 +17,7 @@ on:
       - app/src/main/java/com/worktime/app/ui/settings/SettingsScreen.kt
       - app/src/main/java/com/worktime/app/ui/settings/ChangeRateSheet.kt
       - app/src/main/java/com/worktime/app/ui/yearsummary/YearSummaryScreen.kt
-      - app/src/screenshotTest/kotlin/com/worktime/app/ui/screenshot/StoreScreenshotSources.kt
-      - app/src/screenshotTest/kotlin/com/worktime/app/ui/screenshot/WorkTimeScreenshotTest.kt
+      - "app/src/screenshotTest/kotlin/com/worktime/app/ui/screenshot/**/*.kt"
 
 permissions:
   contents: write
