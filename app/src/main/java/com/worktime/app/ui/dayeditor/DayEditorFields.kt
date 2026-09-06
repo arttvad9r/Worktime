@@ -80,8 +80,8 @@ internal fun NumericEditorSection(
     editorFocusRequester: FocusRequester,
     onEditorFocusChanged: (Boolean) -> Unit,
 ) {
-    // The editor chrome is 48 dp high. A 52 dp row leaves a deliberate 2 dp visual inset
-    // above and below focused fields so their outline never collides with the section frame.
+    // The 40 dp numeric field sits inside a 52 dp row, leaving a deliberate 6 dp inset
+    // above and below so focused/error outlines stay visually separate from the section frame.
     val rowHeight = 52.dp
     val rateY = rowHeight
     val adjustmentTop = rateY + rowHeight
