@@ -6,6 +6,7 @@
     <string name="select_month">Выбор месяца</string>
     <string name="previous_year">Предыдущий год</string>
     <string name="next_year">Следующий год</string>
+    <string name="select_year">Выбор года</string>
     <string name="settings">Настройки</string>
     <string name="monthly_summary">Сводка за месяц</string>
     <string name="worked_duration">Отработано часов</string>

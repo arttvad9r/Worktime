@@ -2,6 +2,7 @@ package com.worktime.app.ui.yearsummary
 
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerDefaults
@@ -21,7 +23,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +35,11 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -59,7 +68,10 @@ import java.time.format.TextStyle as JavaTextStyle
 private const val MonthLabelWeight = 1.2f
 private const val MonthDetailWeight = 1.2f
 private const val MonthAmountWeight = 0.9f
-private val ShortViewportMonthRowMinHeight = 32.dp
+private val ShortViewportMonthRowMinHeight = 34.dp
+private val YearSummarySectionGap = 10.dp
+private val YearSummaryColumnGap = 8.dp
+private const val YearPickerPageSize = 12
 
 internal enum class YearSummaryLayoutMode {
     FixedViewport,
@@ -90,6 +102,7 @@ fun YearSummaryScreen(
         ),
     )
     val pager = rememberYearSummaryPagerState(selectedYear)
+    var yearPickerOpen by rememberSaveable { mutableStateOf(false) }
     val pagerFlingBehavior = PagerDefaults.flingBehavior(
         state = pager.pagerState,
         snapAnimationSpec = spring(
@@ -117,24 +130,30 @@ fun YearSummaryScreen(
             AppTopBar(
                 title = stringResource(R.string.year_summary),
                 onBack = onDismiss,
-                modifier = Modifier.height(52.dp),
+                modifier = Modifier.height(56.dp),
             )
 
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(48.dp),
+                    .height(64.dp)
+                    .padding(horizontal = AppDimens.screenHorizontalPadding, vertical = 6.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Surface(
+                    modifier = Modifier.testTag("year-summary-year-selector"),
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.surfaceContainerLow,
                     tonalElevation = 0.dp,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.82f),
+                    ),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(
                             onClick = { pager.navigatePrevious(scope) },
+                            modifier = Modifier.size(48.dp),
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -143,13 +162,20 @@ fun YearSummaryScreen(
                         }
                         Text(
                             text = pager.displayedYear.toString(),
-                            modifier = Modifier.padding(horizontal = 4.dp),
+                            modifier = Modifier
+                                .clickable(
+                                    onClick = { yearPickerOpen = true },
+                                    onClickLabel = stringResource(R.string.select_year),
+                                )
+                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                                .testTag("year-summary-year"),
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
                         )
                         IconButton(
                             onClick = { pager.navigateNext(scope) },
+                            modifier = Modifier.size(48.dp),
                         ) {
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -189,6 +215,117 @@ fun YearSummaryScreen(
             }
         }
     }
+
+    if (yearPickerOpen) {
+        YearPickerDialog(
+            selectedYear = pager.displayedYear,
+            onSelect = { year ->
+                yearPickerOpen = false
+                onSelectYear(year)
+            },
+            onDismiss = { yearPickerOpen = false },
+        )
+    }
+}
+
+@Composable
+private fun YearPickerDialog(
+    selectedYear: Int,
+    onSelect: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var firstYear by rememberSaveable(selectedYear) {
+        mutableStateOf(selectedYear - (YearPickerPageSize / 2 - 1))
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = stringResource(R.string.select_year),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        onClick = { firstYear -= YearPickerPageSize },
+                        modifier = Modifier.size(44.dp),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                            contentDescription = stringResource(R.string.previous_year),
+                        )
+                    }
+                    Text(
+                        text = "$firstYear–${firstYear + YearPickerPageSize - 1}",
+                        modifier = Modifier.weight(1f),
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    IconButton(
+                        onClick = { firstYear += YearPickerPageSize },
+                        modifier = Modifier.size(44.dp),
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.next_year),
+                        )
+                    }
+                }
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                (firstYear until firstYear + YearPickerPageSize)
+                    .toList()
+                    .chunked(3)
+                    .forEach { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            row.forEach { year ->
+                                val selected = year == selectedYear
+                                FilterChip(
+                                    selected = selected,
+                                    onClick = { onSelect(year) },
+                                    label = {
+                                        Text(
+                                            text = year.toString(),
+                                            modifier = Modifier.fillMaxWidth(),
+                                            textAlign = TextAlign.Center,
+                                            fontWeight = if (selected) {
+                                                FontWeight.SemiBold
+                                            } else {
+                                                FontWeight.Medium
+                                            },
+                                        )
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                    border = null,
+                                    colors = FilterChipDefaults.filterChipColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+            }
+        },
+        confirmButton = {},
+        shape = MaterialTheme.shapes.extraLarge,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 0.dp,
+    )
 }
 
 @Composable
@@ -219,11 +356,11 @@ private fun YearSummaryContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = AppDimens.screenHorizontalPadding)
+            .padding(top = 6.dp, bottom = 8.dp)
             .navigationBarsPadding()
-            .padding(bottom = 4.dp)
             .then(scrollModifier)
             .testTag("year-summary-content"),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(YearSummarySectionGap),
     ) {
         AppSectionSurface {
             YearMetricRow(
@@ -293,7 +430,7 @@ private fun YearSummaryContent(
             },
         ) {
             MonthSectionHeader(compactText = compactText)
-            AppRowDivider()
+            AppRowDivider(modifier = Modifier.padding(vertical = 2.dp))
             Column(
                 modifier = if (layoutMode == YearSummaryLayoutMode.FixedViewport) {
                     Modifier
@@ -334,7 +471,7 @@ private fun YearSummaryContent(
         }
 
         if (layoutMode == YearSummaryLayoutMode.CompactShort) {
-            Spacer(modifier = Modifier.height(1.dp))
+            Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }
@@ -351,10 +488,8 @@ private fun YearMetricRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(
-            if (largeFont) 4.dp else AppDimens.rowGap,
-        ),
+            .heightIn(min = if (largeFont) 34.dp else 30.dp),
+        horizontalArrangement = Arrangement.spacedBy(YearSummaryColumnGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -370,6 +505,7 @@ private fun YearMetricRow(
             style = style,
             fontWeight = if (emphasized) FontWeight.SemiBold else FontWeight.Medium,
             color = valueColor,
+            textAlign = TextAlign.End,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -386,8 +522,8 @@ private fun MonthSectionHeader(compactText: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
+            .heightIn(min = 30.dp),
+        horizontalArrangement = Arrangement.spacedBy(YearSummaryColumnGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -403,7 +539,7 @@ private fun MonthSectionHeader(compactText: Boolean) {
             text = stringResource(R.string.year_month_detail_header),
             modifier = Modifier.weight(MonthDetailWeight),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f),
             textAlign = TextAlign.End,
             maxLines = 1,
         )
@@ -411,7 +547,7 @@ private fun MonthSectionHeader(compactText: Boolean) {
             text = stringResource(R.string.year_month_income_header),
             modifier = Modifier.weight(MonthAmountWeight),
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f),
             textAlign = TextAlign.End,
             maxLines = 1,
         )
@@ -427,10 +563,12 @@ private fun MonthLine(
     dimmed: Boolean,
     style: TextStyle,
 ) {
-    val alpha = if (dimmed) 0.46f else 1f
+    val alpha = if (dimmed) 0.44f else 1f
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 1.dp),
+        horizontalArrangement = Arrangement.spacedBy(YearSummaryColumnGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
