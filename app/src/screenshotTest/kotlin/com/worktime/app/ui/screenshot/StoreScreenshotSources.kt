@@ -174,6 +174,7 @@ fun StoreChangeRateCurrentMonthScreenshot() {
                             onTextChange = {},
                             isError = false,
                             contentDescription = stringResource(R.string.hourly_rate),
+                            autoFocus = true,
                         )
                     }
                 }
