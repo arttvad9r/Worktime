@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -44,16 +45,17 @@ fun AppNavigationRow(
     value: String? = null,
     subtitle: String? = null,
 ) {
+    val largeFont = LocalDensity.current.fontScale >= 1.3f
+    val minHeight = when {
+        largeFont && subtitle != null -> 72.dp
+        largeFont -> 64.dp
+        subtitle != null -> AppDimens.rowWithSubtitleMinHeight
+        else -> AppDimens.rowMinHeight
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(
-                min = if (subtitle == null) {
-                    AppDimens.rowMinHeight
-                } else {
-                    AppDimens.rowWithSubtitleMinHeight
-                },
-            )
+            .heightIn(min = minHeight)
             .clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
         verticalAlignment = Alignment.CenterVertically,
@@ -66,7 +68,7 @@ fun AppNavigationRow(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                maxLines = if (largeFont) 2 else 1,
             )
             if (subtitle != null) {
                 Text(
