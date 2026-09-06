@@ -1,13 +1,24 @@
 package com.worktime.app.ui.screenshot
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.tooling.preview.Preview
 import com.android.tools.screenshot.PreviewTest
+import com.worktime.app.R
 import com.worktime.app.domain.model.MonthSummary
 import com.worktime.app.domain.model.WorkEntry
 import com.worktime.app.domain.preferences.ThemeMode
 import com.worktime.app.ui.calendar.CalendarScreen
 import com.worktime.app.ui.calendar.CalendarUiState
+import com.worktime.app.ui.calendar.MonthlySummaryPanel
+import com.worktime.app.ui.components.PlainDragHandle
 import com.worktime.app.ui.settings.SettingsScreen
 import com.worktime.app.ui.theme.WorkTimeTheme
 import com.worktime.app.ui.yearsummary.YearSummary
@@ -48,6 +59,31 @@ fun CalendarPopulatedDarkScreenshot() {
             onSettingsClick = {},
             onOpenYearSummary = {},
         )
+    }
+}
+
+@PreviewTest
+@Preview(name = "Monthly summary expanded", widthDp = 360, heightDp = 420, locale = "ru")
+@Composable
+fun MonthlySummaryExpandedScreenshot() {
+    WorkTimeTheme(themeMode = ThemeMode.LIGHT) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                PlainDragHandle(
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    onClick = {},
+                    accessibilityLabel = "Месячная сводка",
+                )
+                MonthlySummaryPanel(
+                    state = populatedCalendarState(),
+                    onOpenYearSummary = {},
+                    locale = LocalLocale.current.platformLocale,
+                )
+            }
+        }
     }
 }
 
