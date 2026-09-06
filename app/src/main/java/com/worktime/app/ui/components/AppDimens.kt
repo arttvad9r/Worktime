@@ -27,11 +27,11 @@ object AppDimens {
     val compactControlHeight: Dp = 48.dp
 
     /**
-     * Inline numeric editors are intentionally smaller than their host rows. They should
-     * read as values being edited, not as a second card nested inside the row.
+     * Visible chrome for inline numeric values. The host row remains 48–52 dp high;
+     * only the painted input surface is compact so it stays proportional to body text.
      */
-    val compactFieldWidth: Dp = 96.dp
-    val compactFieldHeight: Dp = 40.dp
+    val compactFieldWidth: Dp = 84.dp
+    val compactFieldHeight: Dp = 32.dp
 
     /** Minimum height of primary actions. */
     val primaryButtonMinHeight: Dp = 52.dp
