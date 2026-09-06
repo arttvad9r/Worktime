@@ -8,15 +8,10 @@ on:
       - .github/workflows/render-rustore-cards.yml
       - scripts/generate_rustore_assets.py
       - scripts/refine_rustore_cards.py
-      - app/src/main/java/com/worktime/app/ui/calendar/CalendarScreen.kt
-      - app/src/main/java/com/worktime/app/ui/calendar/CalendarGrid.kt
-      - app/src/main/java/com/worktime/app/ui/calendar/CalendarSummary.kt
-      - app/src/main/java/com/worktime/app/ui/components/AppDimens.kt
-      - app/src/main/java/com/worktime/app/ui/components/CompactMoneyField.kt
-      - app/src/main/java/com/worktime/app/ui/dayeditor/DayEditorFields.kt
-      - app/src/main/java/com/worktime/app/ui/settings/SettingsScreen.kt
-      - app/src/main/java/com/worktime/app/ui/settings/ChangeRateSheet.kt
-      - app/src/main/java/com/worktime/app/ui/yearsummary/YearSummaryScreen.kt
+      # Any production UI or localized copy can change a screenshot baseline. Keep this
+      # deliberately broad so the visual-review artifact cannot silently lag behind code.
+      - "app/src/main/java/com/worktime/app/ui/**/*.kt"
+      - "app/src/main/res/values*/strings.xml"
       - "app/src/screenshotTest/kotlin/com/worktime/app/ui/screenshot/**/*.kt"
 
 permissions:
