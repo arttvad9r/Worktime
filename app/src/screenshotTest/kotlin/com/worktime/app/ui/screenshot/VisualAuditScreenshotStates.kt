@@ -22,8 +22,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.android.tools.screenshot.PreviewTest
 import com.worktime.app.R
+import com.worktime.app.domain.model.WorkEntry
 import com.worktime.app.domain.preferences.ThemeMode
 import com.worktime.app.ui.calendar.CalendarScreen
+import com.worktime.app.ui.calendar.CalendarUiState
 import com.worktime.app.ui.calendar.MonthPickerDialog
 import com.worktime.app.ui.components.AppDimens
 import com.worktime.app.ui.components.AppNavigationRow
@@ -34,11 +36,13 @@ import com.worktime.app.ui.components.AppSegmentedControl
 import com.worktime.app.ui.components.CompactMoneyField
 import com.worktime.app.ui.settings.SettingsScreen
 import com.worktime.app.ui.theme.WorkTimeTheme
+import java.time.LocalDate
 import java.time.YearMonth
+import java.util.Locale
 
 /**
  * Extra screenshot states for geometry review. These are not marketing compositions: they exist
- * so visual changes are checked as rendered pixels across every interactive screen/state that can
+ * so visual changes are checked as rendered pixels across interactive screens/states that can
  * expose spacing, clipping or nested-control regressions.
  */
 
@@ -188,7 +192,7 @@ fun MonthPickerDialogScreenshot() {
     WorkTimeTheme(themeMode = ThemeMode.LIGHT) {
         MonthPickerDialog(
             visibleMonth = YearMonth.of(2025, 2),
-            locale = java.util.Locale("ru"),
+            locale = Locale.forLanguageTag("ru"),
             onSelect = {},
             onDismiss = {},
         )
@@ -242,4 +246,33 @@ fun SettingsLargeFontScreenshot() {
             onImportData = {},
         )
     }
+}
+
+private fun visualAuditCalendarState(): CalendarUiState {
+    val month = YearMonth.of(2025, 2)
+    val entries = listOf(
+        WorkEntry(
+            date = LocalDate.of(2025, 2, 3),
+            workedMinutes = 8 * 60,
+            hourlyRateMicros = 450_000_000L,
+        ),
+        WorkEntry(
+            date = LocalDate.of(2025, 2, 14),
+            workedMinutes = 8 * 60,
+            hourlyRateMicros = 500_000_000L,
+            penaltyMicros = 250_000_000L,
+        ),
+        WorkEntry(
+            date = LocalDate.of(2025, 2, 20),
+            workedMinutes = 6 * 60 + 45,
+            hourlyRateMicros = 500_000_000L,
+        ),
+    ).associateBy(WorkEntry::date)
+    return CalendarUiState(
+        visibleMonth = month,
+        entries = entries,
+        monthEntries = mapOf(month to entries),
+        selectedDate = LocalDate.of(2025, 2, 14),
+        isReady = true,
+    )
 }
