@@ -23,12 +23,15 @@ object AppDimens {
     /** Rows carrying a secondary explanatory line get a little more breathing room. */
     val rowWithSubtitleMinHeight: Dp = 56.dp
 
-    /** Minimum interactive height for segmented controls and compact inline editors. */
+    /** Minimum interactive height for segmented controls. */
     val compactControlHeight: Dp = 48.dp
 
-    /** Compact inline numeric editor slot (fits inside a [rowMinHeight] row). */
-    val compactFieldWidth: Dp = 120.dp
-    val compactFieldHeight: Dp = compactControlHeight
+    /**
+     * Inline numeric editors are intentionally smaller than their host rows. They should
+     * read as values being edited, not as a second card nested inside the row.
+     */
+    val compactFieldWidth: Dp = 96.dp
+    val compactFieldHeight: Dp = 40.dp
 
     /** Minimum height of primary actions. */
     val primaryButtonMinHeight: Dp = 52.dp
