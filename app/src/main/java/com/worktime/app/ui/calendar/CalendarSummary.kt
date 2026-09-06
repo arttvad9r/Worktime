@@ -58,12 +58,16 @@ internal fun SummaryStrip(
     modifier: Modifier = Modifier,
 ) {
     val summary = state.summary
-    val summaryText = summaryLine(
+    val detailText = summaryLine(
         shiftCount = summary.shiftCount,
         workedMinutes = summary.workedMinutes,
-        totalPayMicros = summary.totalPayMicros,
         locale = locale,
     )
+    val amountText = stringResource(
+        R.string.amount_with_currency,
+        formatWholeAmountMicros(summary.totalPayMicros, locale),
+    )
+    val summaryText = "$detailText · $amountText"
     val haptics = LocalHapticFeedback.current
     val largeFont = LocalDensity.current.fontScale >= 1.3f
     val stripHeight = if (largeFont) 72.dp else 56.dp
@@ -140,19 +144,40 @@ internal fun SummaryStrip(
                 .padding(horizontal = if (largeFont) 12.dp else AppDimens.screenHorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = summaryText,
-                modifier = Modifier.weight(1f),
-                style = if (largeFont) {
-                    MaterialTheme.typography.bodyMedium
-                } else {
-                    MaterialTheme.typography.bodyLarge
-                },
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                maxLines = if (largeFont) 2 else 1,
-            )
+            if (largeFont) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = detailText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = amountText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                    )
+                }
+            } else {
+                Text(
+                    text = summaryText,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+            }
             Icon(
                 Icons.Filled.KeyboardArrowUp,
                 modifier = Modifier.graphicsLayer { rotationZ = chevronRotation },
