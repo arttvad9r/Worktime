@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -64,6 +65,8 @@ internal fun SummaryStrip(
         locale = locale,
     )
     val haptics = LocalHapticFeedback.current
+    val largeFont = LocalDensity.current.fontScale >= 1.3f
+    val stripHeight = if (largeFont) 72.dp else 56.dp
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         animationSpec = tween(
@@ -76,7 +79,7 @@ internal fun SummaryStrip(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(stripHeight),
     ) {
         Row(
             modifier = Modifier
@@ -134,17 +137,21 @@ internal fun SummaryStrip(
                     onClick = onClick,
                 )
                 .testTag("monthly-summary-strip")
-                .padding(horizontal = AppDimens.screenHorizontalPadding),
+                .padding(horizontal = if (largeFont) 12.dp else AppDimens.screenHorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = summaryText,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
+                style = if (largeFont) {
+                    MaterialTheme.typography.bodyMedium
+                } else {
+                    MaterialTheme.typography.bodyLarge
+                },
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
-                maxLines = 1,
+                maxLines = if (largeFont) 2 else 1,
             )
             Icon(
                 Icons.Filled.KeyboardArrowUp,
