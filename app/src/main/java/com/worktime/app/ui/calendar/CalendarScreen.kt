@@ -200,7 +200,7 @@ fun CalendarScreen(
         val primaryPane: @Composable (Modifier, Boolean, Boolean) -> Unit = {
                 paneModifier,
                 showSummaryStrip,
-                expandCalendar,
+                useFlexibleSpacer,
             ->
             Column(
                 modifier = paneModifier,
@@ -233,18 +233,12 @@ fun CalendarScreen(
                         CircularProgressIndicator()
                     }
                 } else {
-                    val pagerModifier = if (expandCalendar) {
-                        Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                    } else {
-                        Modifier
-                            .fillMaxWidth()
-                            .height(calendarGridHeight())
-                    }
                     HorizontalPager(
                         state = pager.pagerState,
-                        modifier = pagerModifier.testTag("calendar-pager"),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(calendarGridHeight())
+                            .testTag("calendar-pager"),
                         beyondViewportPageCount = 1,
                         flingBehavior = pagerFlingBehavior,
                         key = { page -> pager.monthForPage(page).toString() },
@@ -272,6 +266,9 @@ fun CalendarScreen(
                         TodayEntryPrompt(
                             onClick = { closeSummaryBehind { onDayClick(today) } },
                         )
+                    }
+                    if (useFlexibleSpacer) {
+                        Spacer(modifier = Modifier.weight(1f))
                     }
                     if (showSummaryStrip) {
                         SummaryStrip(
