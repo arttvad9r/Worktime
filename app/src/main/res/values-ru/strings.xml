@@ -36,7 +36,7 @@
     <string name="delete_entry">Удалить запись</string>
 
     <string name="section_calculation">РАСЧЁТ</string>
-    <string name="settings_rate">Ставка по умолчанию</string>
+    <string name="settings_rate">Базовая ставка</string>
     <string name="change_rate_for_period">Изменить ставку за период</string>
     <string name="section_appearance">ВНЕШНИЙ ВИД</string>
     <string name="theme_system">Системная</string>
