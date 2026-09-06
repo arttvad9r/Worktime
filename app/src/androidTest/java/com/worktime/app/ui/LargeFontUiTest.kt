@@ -23,6 +23,7 @@ import com.worktime.app.domain.model.MonthSummary
 import com.worktime.app.domain.model.WorkEntry
 import com.worktime.app.ui.calendar.CalendarScreen
 import com.worktime.app.ui.calendar.CalendarUiState
+import com.worktime.app.ui.calendar.calendarGridHeight
 import com.worktime.app.ui.settings.SettingsScreen
 import com.worktime.app.ui.yearsummary.YearSummary
 import com.worktime.app.ui.yearsummary.YearSummaryScreen
@@ -30,6 +31,7 @@ import java.time.LocalDate
 import java.time.Month
 import java.time.YearMonth
 import java.time.format.TextStyle
+import kotlin.math.abs
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -189,7 +191,7 @@ class LargeFontUiTest {
     }
 
     @Test
-    fun calendarUsesAvailableHeightAtLargeFontScale() {
+    fun calendarPreservesSixWeekGeometryAtLargeFontScale() {
         var deviceDensity = 1f
         composeRule.setContent {
             deviceDensity = LocalDensity.current.density
@@ -219,9 +221,11 @@ class LargeFontUiTest {
             .boundsInRoot
             .height
         val largeHeightDp = largeHeightPx / deviceDensity
+        val expectedHeightDp = calendarGridHeight().value
 
-        assert(largeHeightDp > 500f) {
-            "calendar pager did not expand into the available tall viewport: ${largeHeightDp}dp"
+        assert(abs(largeHeightDp - expectedHeightDp) <= 1f) {
+            "calendar pager changed the fixed six-week geometry: " +
+                "expected ${expectedHeightDp}dp, actual ${largeHeightDp}dp"
         }
         composeRule.onNodeWithTag("monthly-summary-strip").assertIsDisplayed()
     }
