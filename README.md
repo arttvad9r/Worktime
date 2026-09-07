@@ -4,7 +4,7 @@
 
 No account, no cloud sync, no analytics and no ads. Data stays on the device unless you explicitly export it.
 
-[**Download the latest APK**](https://github.com/arttvad9r/Work/releases/latest) · [Changelog](CHANGELOG.md) · [Privacy](docs/PRIVACY.md) · [License](LICENSE) · [Documentation](docs/README.md)
+[**Download the latest APK**](https://github.com/arttvad9r/Worktime/releases/latest) · [Changelog](CHANGELOG.md) · [Privacy](docs/PRIVACY.md) · [License](LICENSE) · [Documentation](docs/README.md)
 
 ## Screenshots
 
@@ -34,7 +34,7 @@ WorkTime is intentionally ruble-focused: monetary values are displayed in `₽`;
 
 WorkTime is distributed directly through **GitHub Releases** as a signed, optimized APK.
 
-1. Open the [latest release](https://github.com/arttvad9r/Work/releases/latest).
+1. Open the [latest release](https://github.com/arttvad9r/Worktime/releases/latest).
 2. Download `WorkTime-<version>.apk`.
 3. If Android asks, allow your browser or file manager to install apps from that source.
 4. Install the APK. Future releases signed with the same WorkTime certificate can be installed over the existing app without removing its data.
