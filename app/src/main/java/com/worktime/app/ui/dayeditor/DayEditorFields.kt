@@ -1,5 +1,7 @@
 package com.worktime.app.ui.dayeditor
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,8 +21,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -73,7 +80,9 @@ internal fun NumericEditorSection(
     editorFocusRequester: FocusRequester,
     onEditorFocusChanged: (Boolean) -> Unit,
 ) {
-    val rowHeight = AppDimens.rowMinHeight
+    // The 40 dp numeric field sits inside a 52 dp row, leaving a deliberate 6 dp inset
+    // above and below so focused/error outlines stay visually separate from the section frame.
+    val rowHeight = 52.dp
     val rateY = rowHeight
     val adjustmentTop = rateY + rowHeight
     val penaltyTop = adjustmentTop + rowHeight
@@ -94,11 +103,19 @@ internal fun NumericEditorSection(
         penaltyVisible -> AdjustmentPresentation.Value
         else -> AdjustmentPresentation.Add
     }
+    val sectionShape = MaterialTheme.shapes.medium
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(sectionHeight),
+            .height(sectionHeight)
+            .clip(sectionShape)
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outlineVariant,
+                shape = sectionShape,
+            ),
     ) {
         if (activeField != NumericField.Duration) {
             EditorValueRow(
@@ -217,7 +234,9 @@ private fun EditorValueRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -232,6 +251,7 @@ private fun EditorValueRow(
                 text = valueText ?: placeholderText.orEmpty(),
                 modifier = Modifier.padding(end = AppDimens.rowGap),
                 style = MaterialTheme.typography.bodyLarge,
+                fontWeight = if (valueText != null) FontWeight.Medium else FontWeight.Normal,
                 color = when {
                     isError -> MaterialTheme.colorScheme.error
                     valueText != null -> MaterialTheme.colorScheme.onSurface
@@ -250,7 +270,9 @@ private fun AdjustmentAddRow(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -263,7 +285,7 @@ private fun AdjustmentAddRow(
         Icon(
             imageVector = Icons.Filled.Add,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            tint = MaterialTheme.colorScheme.primary,
         )
     }
 }
@@ -296,9 +318,10 @@ private fun PersistentNumericEditor(
         NumericField.Bonus -> bonusHasError
         NumericField.Penalty -> penaltyHasError
     }
+    var isFocused by remember { mutableStateOf(false) }
 
     Row(
-        modifier = modifier,
+        modifier = modifier.padding(horizontal = 14.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -308,7 +331,10 @@ private fun PersistentNumericEditor(
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
         )
-        CompactInputChrome(isError = isError) {
+        CompactInputChrome(
+            isError = isError,
+            focused = isFocused,
+        ) {
             BasicTextField(
                 state = state,
                 inputTransformation = if (isDuration) durationInputTransformation else moneyInputTransformation,
@@ -325,13 +351,16 @@ private fun PersistentNumericEditor(
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(editorFocusRequester)
-                    .onFocusChanged { onEditorFocusChanged(it.isFocused) },
+                    .onFocusChanged {
+                        isFocused = it.isFocused
+                        onEditorFocusChanged(it.isFocused)
+                    },
             )
             if (isDuration && state.text.isEmpty()) {
                 Text(
                     text = stringResource(R.string.duration_placeholder),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.46f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.52f),
                     maxLines = 1,
                 )
             }

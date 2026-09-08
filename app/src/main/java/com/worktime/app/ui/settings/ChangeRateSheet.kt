@@ -40,6 +40,8 @@ import com.worktime.app.ui.components.AppDimens
 import com.worktime.app.ui.components.AppModalBottomSheet
 import com.worktime.app.ui.components.AppNavigationRow
 import com.worktime.app.ui.components.AppPrimaryButton
+import com.worktime.app.ui.components.AppRowDivider
+import com.worktime.app.ui.components.AppSectionSurface
 import com.worktime.app.ui.components.AppSegmentedControl
 import com.worktime.app.ui.components.CompactMoneyField
 import com.worktime.app.ui.components.LabelValueRow
@@ -111,7 +113,7 @@ fun ChangeRateSheet(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
                     .padding(bottom = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 AppSegmentedControl(
                     options = listOf(
@@ -124,18 +126,14 @@ fun ChangeRateSheet(
                     },
                 )
 
-                // Both modes occupy the exact same two-row geometry. Only interactivity changes,
-                // so moving the segmented capsule never causes the sheet body/button to jump.
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(0.dp),
-                ) {
+                AppSectionSurface {
                     if (period == RatePeriod.CURRENT_MONTH) {
                         LabelValueRow(
                             label = stringResource(R.string.start_date),
                             value = visibleMonth.atDay(1).format(dateFormatter),
                             modifier = Modifier.heightIn(min = AppDimens.rowMinHeight),
                         )
+                        AppRowDivider()
                         LabelValueRow(
                             label = stringResource(R.string.end_date),
                             value = visibleMonth.atEndOfMonth().format(dateFormatter),
@@ -147,33 +145,37 @@ fun ChangeRateSheet(
                             value = customStart?.format(dateFormatter) ?: "",
                             onClick = { pickingDate = DateField.Start },
                         )
+                        AppRowDivider()
                         AppNavigationRow(
                             label = stringResource(R.string.end_date),
                             value = customEnd?.format(dateFormatter) ?: "",
                             onClick = { pickingDate = DateField.End },
                         )
                     }
-                }
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = AppDimens.rowMinHeight),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        text = rateLabel,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                    )
-                    CompactMoneyField(
-                        text = rate,
-                        onTextChange = { rate = it },
-                        isError = rate.isNotEmpty() && !rateValid,
-                        contentDescription = rateLabel,
-                    )
+                    AppRowDivider()
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = AppDimens.rowMinHeight),
+                        horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = rateLabel,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                        )
+                        CompactMoneyField(
+                            text = rate,
+                            onTextChange = { rate = it },
+                            isError = rate.isNotEmpty() && !rateValid,
+                            contentDescription = rateLabel,
+                        )
+                    }
                 }
 
                 AppPrimaryButton(
@@ -246,6 +248,9 @@ fun ChangeRateSheet(
                     Text(stringResource(R.string.cancel))
                 }
             },
+            shape = MaterialTheme.shapes.extraLarge,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 0.dp,
         )
     }
 }

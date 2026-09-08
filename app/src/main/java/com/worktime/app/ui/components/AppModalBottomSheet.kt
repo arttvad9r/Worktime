@@ -35,16 +35,16 @@ fun AppModalBottomSheet(
         sheetState = sheetState,
         shape = AppSheetShape,
         dragHandle = null,
-        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
         tonalElevation = 0.dp,
-        scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.28f),
+        scrimColor = MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
                 .padding(horizontal = AppDimens.screenHorizontalPadding)
-                .padding(bottom = 12.dp),
+                .padding(bottom = 16.dp),
         ) {
             PlainDragHandle(
                 modifier = Modifier.align(Alignment.CenterHorizontally),

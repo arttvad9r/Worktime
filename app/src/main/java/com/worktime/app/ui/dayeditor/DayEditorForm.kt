@@ -15,6 +15,8 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -87,8 +89,6 @@ internal fun DayEditorSheetContent(
         )
     }
 
-    // One focusable editor relocates between fixed value slots. Keeping the same node
-    // preserves the platform IME session while avoiding a distracting travelling field.
     val editorState = rememberTextFieldState(initialText = durationState.text.toString())
     var activeField by remember { mutableStateOf(NumericField.Duration) }
     var editorHasFocus by remember { mutableStateOf(false) }
@@ -316,6 +316,9 @@ internal fun DayEditorSheetContent(
                         confirmDelete = false
                         onDelete(date)
                     },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
                 ) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = {
@@ -323,6 +326,9 @@ internal fun DayEditorSheetContent(
                     Text(stringResource(R.string.cancel))
                 }
             },
+            shape = MaterialTheme.shapes.extraLarge,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            tonalElevation = 0.dp,
         )
     }
 }

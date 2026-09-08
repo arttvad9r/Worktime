@@ -53,12 +53,11 @@ internal fun CalendarGrid(
     locale: Locale,
     modifier: Modifier = Modifier,
 ) {
-    val weekRowHeight = WeekRowHeight
     val weekdayRowHeight = 28.dp
     val dateAreaHeight = 28.dp
     Box(
         modifier = modifier
-            .height(calendarGridHeight())
+            .background(MaterialTheme.colorScheme.surfaceContainerLowest)
             .testTag("calendar-grid"),
     ) {
         val weekdays = (0 until 7).map { DayOfWeek.MONDAY.plus(it.toLong()) }
@@ -83,22 +82,23 @@ internal fun CalendarGrid(
                         text = day.getDisplayName(TextStyle.SHORT, locale),
                         modifier = Modifier.weight(1f),
                         textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.86f),
                         style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
                         maxLines = 1,
                     )
                 }
             }
 
             HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.36f),
             )
 
             cells.chunked(7).forEachIndexed { weekIndex, week ->
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(weekRowHeight),
+                        .weight(1f),
                 ) {
                     week.forEach { date ->
                         val isInVisibleMonth = YearMonth.from(date) == state.visibleMonth
@@ -180,23 +180,23 @@ private fun DayCell(
         },
     )
     val dateColor = when {
-        !isInVisibleMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
+        !isInVisibleMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.30f)
         isToday -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+        else -> MaterialTheme.colorScheme.onSurface
     }
     val amountColor = if ((totalMicros ?: 0L) < 0L) {
         MaterialTheme.colorScheme.error
     } else {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.90f)
+        MaterialTheme.colorScheme.primary
     }
     val borderColor = if (isToday && isInVisibleMonth) {
         MaterialTheme.colorScheme.primary
     } else {
-        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)
     }
     val backgroundColor = when {
-        isSelected -> MaterialTheme.colorScheme.primaryContainer
-        visibleEntry != null -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f)
+        isSelected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.84f)
+        visibleEntry != null -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f)
         else -> Color.Transparent
     }
 
@@ -204,7 +204,7 @@ private fun DayCell(
         modifier = Modifier
             .fillMaxSize()
             .border(
-                width = if (isToday && isInVisibleMonth) 1.dp else 0.5.dp,
+                width = if (isToday && isInVisibleMonth) 1.25.dp else 0.5.dp,
                 brush = SolidColor(borderColor),
                 shape = RectangleShape,
             )
@@ -221,111 +221,70 @@ private fun DayCell(
                 onClick = onClick,
             ),
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(dateAreaHeight)
-                    .padding(top = 3.dp, end = 4.dp),
-                contentAlignment = Alignment.TopEnd,
-            ) {
-                Text(
-                    text = date.dayOfMonth.toString(),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = dateColor,
-                    maxLines = 1,
-                )
-            }
-            if (visibleEntry != null) {
-                if (largeFont) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = dateAreaHeight, start = 2.dp, end = 2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = if (visibleEntry.workedMinutes > 0) {
-                                formatDurationCompact(visibleEntry.workedMinutes)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 10.sp,
-                                lineHeight = 11.sp,
-                            ),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = if (totalMicros != null && shouldShowDayAmount(totalMicros)) {
-                                formatWholeAmountMicros(totalMicros, locale)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 7.sp,
-                                lineHeight = 8.sp,
-                            ),
-                            fontWeight = FontWeight.Medium,
-                            color = amountColor,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(dateAreaHeight)
+                .padding(top = 3.dp, end = 4.dp)
+                .align(Alignment.TopCenter),
+            contentAlignment = Alignment.TopEnd,
+        ) {
+            Text(
+                text = date.dayOfMonth.toString(),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 13.sp,
+                    lineHeight = 16.sp,
+                ),
+                fontWeight = FontWeight.Bold,
+                color = dateColor,
+                maxLines = 1,
+            )
+        }
+
+        if (visibleEntry != null) {
+            Text(
+                text = if (visibleEntry.workedMinutes > 0) {
+                    formatDurationCompact(visibleEntry.workedMinutes)
                 } else {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Text(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .fillMaxWidth()
-                                .padding(horizontal = 2.dp),
-                            text = if (visibleEntry.workedMinutes > 0) {
-                                formatDurationCompact(visibleEntry.workedMinutes)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                lineHeight = 18.sp,
-                            ),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .padding(bottom = 3.dp)
-                                .padding(horizontal = 2.dp),
-                            text = if (totalMicros != null && shouldShowDayAmount(totalMicros)) {
-                                formatWholeAmountMicros(totalMicros, locale)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                lineHeight = 13.sp,
-                            ),
-                            fontWeight = FontWeight.Medium,
-                            color = amountColor,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-            }
+                    ""
+                },
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .padding(horizontal = 3.dp),
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = if (largeFont) 10.sp else 15.sp,
+                    lineHeight = if (largeFont) 11.sp else 18.sp,
+                ),
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
+
+            Text(
+                text = if (totalMicros != null && shouldShowDayAmount(totalMicros)) {
+                    formatWholeAmountMicros(totalMicros, locale)
+                } else {
+                    ""
+                },
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(start = 4.dp, end = 2.dp, bottom = 3.dp),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = if (largeFont) 9.sp else 12.sp,
+                    lineHeight = if (largeFont) 10.sp else 14.sp,
+                ),
+                fontWeight = FontWeight.Bold,
+                color = amountColor,
+                textAlign = TextAlign.Start,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

@@ -3,6 +3,8 @@ package com.worktime.app.ui
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -12,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.worktime.app.R
 import com.worktime.app.ui.backup.BackupUiState
 import com.worktime.app.ui.backup.BackupViewModel
@@ -96,10 +99,20 @@ private fun ImportConfirmationDialog(
             Text(pluralStringResource(R.plurals.import_confirmation_text, pendingCount, pendingCount))
         },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text(stringResource(R.string.replace)) }
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error,
+                ),
+            ) {
+                Text(stringResource(R.string.replace))
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         },
+        shape = MaterialTheme.shapes.extraLarge,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 0.dp,
     )
 }

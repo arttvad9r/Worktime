@@ -6,6 +6,7 @@
     <string name="select_month">Select month</string>
     <string name="previous_year">Previous year</string>
     <string name="next_year">Next year</string>
+    <string name="select_year">Select year</string>
     <string name="settings">Settings</string>
     <string name="monthly_summary">Monthly summary</string>
     <string name="worked_duration">Hours worked</string>
@@ -45,16 +46,19 @@
     <string name="section_data">DATA</string>
     <string name="export_data">Export data</string>
     <string name="import_data">Import data</string>
-    <string name="privacy_and_data">Privacy &amp; data</string>
-    <string name="privacy_local_subtitle">Stored locally; no account or sync</string>
-    <string name="privacy_stored_data_title">Stored data</string>
-    <string name="privacy_stored_data_text">Work entries (worked minutes, saved hourly-rate snapshot, bonus and penalty) and app settings are stored locally on this device using Room and DataStore.</string>
-    <string name="privacy_network_title">Network and sharing</string>
-    <string name="privacy_network_text">WorkTime does not require an account or internet connection for core use. It has no analytics or advertising SDKs, does not automatically transmit work or earnings data, and requests no internet, location, contacts, microphone or camera permission.</string>
-    <string name="privacy_backup_title">Backup and export</string>
-    <string name="privacy_backup_text">Android cloud backup and device-to-device transfer are disabled for app data. JSON/CSV export writes only to the location you choose in the system picker; import reads only the file you choose.</string>
+    <string name="privacy_and_data">Privacy</string>
+    <string name="privacy_local_subtitle">Local-first; no account or sync</string>
+    <string name="privacy_intro_text">WorkTime keeps its core data on this device. Work records and settings are processed locally to provide the calendar and income calculations. The developer does not receive the contents of those records.</string>
+    <string name="privacy_stored_data_title">Data on this device</string>
+    <string name="privacy_stored_data_text">Work dates, worked time, saved hourly-rate snapshots, bonuses, penalties, the default hourly rate and the selected theme are stored in the app’s private local storage. WorkTime does not create an account or a developer-side copy of this data.</string>
+    <string name="privacy_network_title">Automatic transmission</string>
+    <string name="privacy_network_text">The current version contains no advertising, analytics or crash-reporting SDKs and does not request Android’s INTERNET permission. WorkTime does not automatically send work, earnings or settings data to the developer or third parties.</string>
+    <string name="privacy_backup_title">Export, import and external services</string>
+    <string name="privacy_backup_text">Export and import happen only after your explicit action through Android’s system file picker. If you choose a cloud provider, messenger or another external service as the destination for an exported file, further processing is governed by that service’s terms and privacy policy. WorkTime does not upload the file there automatically.</string>
     <string name="privacy_deletion_title">Deletion</string>
-    <string name="privacy_deletion_text">Individual entries can be deleted in WorkTime. Uninstalling the app removes its local app data subject to Android platform behavior. Exported files are outside the app and must be removed separately from their storage location.</string>
+    <string name="privacy_deletion_text">Individual work records can be deleted inside WorkTime. Uninstalling the app removes its local app data subject to Android platform behavior. Files exported outside the app remain in the location you selected and must be deleted there separately.</string>
+    <string name="privacy_policy_title">Full privacy policy</string>
+    <string name="privacy_policy_text">For a published release, the full privacy policy is available from the WorkTime listing in RuStore. It includes the developer’s identification and contact details. If the app’s data practices change, the policy is updated before the corresponding release.</string>
     <string name="back">Back</string>
 
     <string name="rate_for_period">Rate for period</string>

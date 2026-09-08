@@ -44,9 +44,10 @@ class MoneyFormattingTest {
     }
 
     @Test
-    fun `whole amount formatter rounds away calendar fractions and groups thousands`() {
-        assertEquals("1,235", formatWholeAmountMicros(1_234_500_000L, Locale.US))
-        assertEquals("1,234", formatWholeAmountMicros(1_234_499_999L, Locale.US))
-        assertEquals("4,810", formatWholeAmountMicros(4_810_000_000L, Locale.US))
+    fun `whole amount formatter rounds calendar fractions without grouping`() {
+        assertEquals("1235", formatWholeAmountMicros(1_234_500_000L, Locale.US))
+        assertEquals("1234", formatWholeAmountMicros(1_234_499_999L, Locale.US))
+        assertEquals("4810", formatWholeAmountMicros(4_810_000_000L, Locale.US))
+        assertEquals("4810", formatWholeAmountMicros(4_810_000_000L, Locale("ru")))
     }
 }

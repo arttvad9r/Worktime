@@ -1,0 +1,121 @@
+name: Render RuStore cards
+
+on:
+  push:
+    branches:
+      - release/rustore-publication
+    paths:
+      - .github/workflows/render-rustore-cards.yml
+      - scripts/generate_rustore_assets.py
+      - scripts/refine_rustore_cards.py
+      # Any production UI or localized copy can change a screenshot baseline. Keep this
+      # deliberately broad so the visual-review artifact cannot silently lag behind code.
+      - "app/src/main/java/com/worktime/app/ui/**/*.kt"
+      - "app/src/main/res/values*/strings.xml"
+      - "app/src/screenshotTest/kotlin/com/worktime/app/ui/screenshot/**/*.kt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: rustore-cards-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+
+      - name: Install renderer dependency
+        run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
+
+      - name: Remove stale screenshot references
+        run: |
+          # Preview hashes change when locale or production UI code changes. Clearing the
+          # generated reference tree prevents stale and fresh hashes from coexisting and
+          # makes the renderer consume exactly one current source image per preview.
+          find app/src/screenshotTestDebug/reference -type f -name '*.png' -delete
+
+      - name: Refresh reproducible store source screenshots
+        run: ./gradlew --no-daemon :app:updateDebugScreenshotTest --stacktrace
+
+      - name: Upload app screenshots for visual review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: worktime-ui-screenshots
+          path: app/src/screenshotTestDebug/reference/**/*.png
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Render and refine premium RuStore gallery
+        run: |
+          python3 scripts/generate_rustore_assets.py
+          python3 scripts/refine_rustore_cards.py
+
+      - name: Validate generated gallery
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          root = Path("docs/rustore/assets")
+          expected = [
+              "01-hero-calendar.png",
+              "02-shift-entry.png",
+              "03-year-summary.png",
+              "04-themes.png",
+              "05-privacy.png",
+              "06-export.png",
+          ]
+          for name in expected:
+              path = root / name
+              if not path.is_file():
+                  raise SystemExit(f"missing {name}")
+              image = Image.open(path)
+              if image.size != (1080, 1920):
+                  raise SystemExit(f"wrong size for {name}: {image.size}")
+              if path.stat().st_size > 3 * 1024 * 1024:
+                  raise SystemExit(f"too large for RuStore: {name}")
+          PY
+
+      - name: Upload rendered gallery for visual review
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rustore-premium-cards
+          path: |
+            docs/rustore/assets/01-hero-calendar.png
+            docs/rustore/assets/02-shift-entry.png
+            docs/rustore/assets/03-year-summary.png
+            docs/rustore/assets/04-themes.png
+            docs/rustore/assets/05-privacy.png
+            docs/rustore/assets/06-export.png
+            docs/rustore/assets/rustore-icon-512.png
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Commit rendered sources and cards
+        run: |
+          git add -A \
+            app/src/screenshotTestDebug/reference \
+            docs/rustore/assets
+
+          if git diff --cached --quiet; then
+            echo "RuStore cards are already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "docs: render premium RuStore cards"
+          git push origin "HEAD:${GITHUB_REF_NAME}"

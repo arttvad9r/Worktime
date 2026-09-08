@@ -14,7 +14,7 @@ if [ ! -f "$RELEASE_STORE_FILE" ]; then
   exit 2
 fi
 
-for tool in git python3 keytool; do
+for tool in git python3 keytool unzip; do
   if ! command -v "$tool" >/dev/null 2>&1; then
     echo "Required tool is missing: $tool" >&2
     exit 2
@@ -82,6 +82,7 @@ python3 scripts/static_audit.py
 
 ./gradlew --no-daemon \
   :app:lintRelease \
+  :app:analyzeReleaseR8Config \
   :app:assembleRelease \
   --stacktrace
 
@@ -97,6 +98,12 @@ if [ ! -s "$APK" ]; then
 fi
 if [ ! -s "$MAPPING" ]; then
   echo "R8 mapping was not produced: $MAPPING" >&2
+  exit 1
+fi
+
+if ! unzip -l "$APK" | grep -F 'assets/dexopt/baseline.prof' >/dev/null; then
+  echo "Release APK does not contain assets/dexopt/baseline.prof." >&2
+  echo "The production Baseline Profile is not packaged; refusing release candidate." >&2
   exit 1
 fi
 
@@ -166,6 +173,7 @@ apk=$DIST_APK
 apkSha256=$apk_sha256
 signerSha256=$signer_sha256
 mapping=$DIST_MAPPING
+baselineProfile=assets/dexopt/baseline.prof
 EOF
 
 printf 'Release candidate built and verified.\n'
@@ -174,6 +182,7 @@ printf 'Version: %s (%s)\n' "$version_name" "$version_code"
 printf 'APK: %s\n' "$DIST_APK"
 printf 'APK SHA-256: %s\n' "$apk_sha256"
 printf 'Signer SHA-256: %s\n' "$signer_sha256"
+printf 'Baseline Profile: packaged\n'
 printf 'R8 mapping: %s\n' "$DIST_MAPPING"
 printf 'Checksums: %s\n' "$CHECKSUMS"
 printf 'Metadata: %s\n' "$METADATA"

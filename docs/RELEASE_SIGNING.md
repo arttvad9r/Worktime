@@ -1,63 +1,72 @@
 # Release signing
 
-WorkTime is distributed as a directly installable APK through GitHub Releases. There is no store-managed app-signing layer: the private key used here is the **actual app-signing key** trusted by Android for every installed release.
+WorkTime uses a developer-controlled Android app-signing key. The private key is the **actual update identity** trusted by Android for directly distributed APKs and by RuStore for future APK updates.
 
-That key is a long-lived release identity. Every future APK intended to update an existing WorkTime installation must be signed with the same certificate. Losing the private key means existing installations cannot receive a normally installable update signed by a replacement key.
+## Production signing starts at 0.2.0
 
-The keystore and passwords must never be committed to this repository, uploaded to GitHub Actions, or pasted into issue/PR logs. The project reads signing inputs from Gradle properties or `RELEASE_*` environment variables and never falls back to debug signing.
+The private key that signed the early direct GitHub build `0.1.0` has been lost. That key cannot be reconstructed from the APK, certificate, fingerprint or repository history.
 
-## Production signing identity
+We cannot guarantee that no `0.1.0` production APK remains installed outside the developer's current devices. Development now uses an isolated debug package, but any `0.1.0` production install signed by the lost certificate cannot be updated in place. WorkTime `0.2.0` is therefore the first RuStore production identity and establishes a new permanent signing identity for all `0.2.0+` production builds.
 
-The public SHA-256 fingerprint of the production signing certificate is pinned in:
+Consequences:
+
+- the first RuStore release can start with the newly generated certificate because WorkTime has not previously established a RuStore signing identity;
+- WorkTime `0.2.0` and every later RuStore/direct production APK must use the **same new key**;
+- any installed `0.1.0` APK cannot be updated in place with the replacement certificate;
+- if data from an installed `0.1.0` must be preserved, export JSON first, save it outside the app, uninstall `0.1.0`, install `0.2.0+`, then import the JSON and verify the restored entries/settings;
+- the debug build remains isolated through `com.worktime.app.debug` and does not determine production update identity.
+
+The legacy public certificate fingerprint remains in `release/production-signing-cert-sha256.txt` only until the replacement key is generated. Do not build or publish the `0.2.0` production candidate until that file has been replaced with the new public SHA-256 fingerprint and committed.
+
+## Generate the replacement key once
+
+Generate the private key **locally on a trusted machine**, not in ChatGPT, GitHub Actions, a public CI runner or the repository. The repository includes a helper that deliberately leaves the private key outside Git:
+
+```bash
+sh scripts/init_production_signing_key.sh
+```
+
+By default it creates:
+
+```text
+$HOME/.android/keys/worktime-release-v2.jks
+$HOME/.android/keys/worktime-release-v2-certificate.pem
+```
+
+and updates only this public repository file:
 
 ```text
 release/production-signing-cert-sha256.txt
 ```
 
-The fingerprint is public information and is safe to keep in the repository. The private key and passwords are not.
+The helper uses RSA 4096 and a long-lived certificate, prompts for secrets interactively, refuses to overwrite an existing keystore, exports the public certificate, and pins its SHA-256 fingerprint. The fingerprint is public information; the `.jks` file and passwords are not.
 
-`build_release_candidate.sh` compares every normal release candidate against that pinned fingerprint and refuses a candidate signed by another certificate. `create_github_release.sh` also verifies that the candidate metadata names the pinned production signer before it can create a draft release.
+Immediately after generation:
 
-CI uses a disposable certificate only in the explicitly isolated `WORKTIME_SIGNING_SMOKE=1` path. That bypass is accepted only when `CI=true`, and the resulting APK is never a release artifact.
+1. Save the keystore password and key password in a password manager.
+2. Create at least two encrypted backups of `worktime-release-v2.jks` in separate locations.
+3. Verify one backup can be opened with `keytool -list -v`.
+4. Commit only the changed `release/production-signing-cert-sha256.txt` file.
+5. Never upload the private keystore or passwords to GitHub, RuStore descriptions, issue/PR comments or chat.
 
-## One-time app-signing key creation
+## Production signing identity
 
-Create the keystore locally on a trusted machine. The command prompts for secrets instead of putting passwords in shell history:
+The public SHA-256 fingerprint of the active production signing certificate is pinned in:
 
-```bash
-mkdir -p "$HOME/.android/keys"
-keytool -genkeypair -v \
-  -keystore "$HOME/.android/keys/worktime-release.jks" \
-  -storetype JKS \
-  -alias worktime-release \
-  -keyalg RSA \
-  -keysize 2048 \
-  -validity 10000
+```text
+release/production-signing-cert-sha256.txt
 ```
 
-Use a unique strong password and keep it in a password manager. Keep at least two encrypted backups of `worktime-release.jks` in separate locations. Do not keep the only copy on the development machine.
+`build_release_candidate.sh` compares every normal release candidate against that fingerprint and refuses an APK signed by another certificate. `create_github_release.sh` also verifies the candidate metadata against the pinned signer.
 
-Export and archive the public certificate and its SHA-256 fingerprint. The certificate is safe to publish; the private key is not:
-
-```bash
-keytool -export -rfc \
-  -keystore "$HOME/.android/keys/worktime-release.jks" \
-  -alias worktime-release \
-  -file "$HOME/.android/keys/worktime-release-certificate.pem"
-
-keytool -list -v \
-  -keystore "$HOME/.android/keys/worktime-release.jks" \
-  -alias worktime-release
-```
-
-Compare the displayed SHA-256 value with `release/production-signing-cert-sha256.txt` before the first real release and after restoring the key from backup.
+CI uses a disposable certificate only in the explicitly isolated `WORKTIME_SIGNING_SMOKE=1` path. That bypass is accepted only when `CI=true`, and its APK is never a production release artifact.
 
 ## Build a signed release candidate locally
 
-Use the exact clean commit that passed CI. Set the path and alias normally; enter passwords interactively:
+After the replacement fingerprint is committed, build from the exact clean commit that passed CI:
 
 ```bash
-export RELEASE_STORE_FILE="$HOME/.android/keys/worktime-release.jks"
+export RELEASE_STORE_FILE="$HOME/.android/keys/worktime-release-v2.jks"
 export RELEASE_KEY_ALIAS="worktime-release"
 
 read -rsp "Keystore password: " RELEASE_STORE_PASSWORD; export RELEASE_STORE_PASSWORD; echo
@@ -68,13 +77,16 @@ read -rsp "Key password: " RELEASE_KEY_PASSWORD; export RELEASE_KEY_PASSWORD; ec
 unset RELEASE_STORE_PASSWORD RELEASE_KEY_PASSWORD
 ```
 
-The script refuses a dirty working tree, runs the static audit and release lint, builds the optimized release APK, verifies it with Android `apksigner`, checks the signer against the pinned production certificate, and records:
+The script refuses a dirty working tree and then:
 
-- exact Git commit;
-- `versionCode` / `versionName`;
-- APK SHA-256;
-- signer certificate SHA-256;
-- matching R8 mapping.
+- runs the repository static audit;
+- runs `lintRelease`;
+- runs the AGP 9.3 R8 Configuration Analyzer;
+- builds the optimized release APK with R8/resource optimization enabled;
+- refuses the candidate if `assets/dexopt/baseline.prof` is missing from the final APK;
+- verifies the APK with Android `apksigner`;
+- checks the signer against the pinned production certificate;
+- records the exact commit, version, APK SHA-256, signer SHA-256 and matching R8 mapping.
 
 Distribution outputs are copied to:
 
@@ -87,53 +99,26 @@ app/build/outputs/release-candidate/WorkTime-<version>-mapping.txt
 
 The keystore and passwords are never part of the release output.
 
-## Create a draft GitHub Release
+## RuStore first publication
 
-The release helper uses the already-built local candidate. It does not rebuild or resign anything and therefore does not need the signing key.
+For the first RuStore publication, upload the exact APK produced by the release-candidate process above. From `0.2.0` onward, keep the same new signing certificate for every RuStore update and for any direct GitHub APK release.
 
-Prerequisites:
+Using one certificate across both channels preserves normal Android signature continuity for later versions, provided package name and `versionCode` ordering are also compatible.
 
-- GitHub CLI (`gh`) is installed and authenticated for this repository;
-- the current clean `HEAD` is the tested release commit;
-- a tag named `v<versionName>` points to the same commit and has been pushed to `origin`;
-- `build_release_candidate.sh` has already produced the candidate files above.
-
-Example:
-
-```bash
-git tag -a v0.1.0 -m "WorkTime 0.1.0"
-git push origin v0.1.0
-
-./scripts/create_github_release.sh
-```
-
-`create_github_release.sh` verifies the candidate metadata, pinned signer and SHA-256, verifies the local and remote tag, refuses to replace an existing release, then creates a **draft GitHub Release** with:
-
-- `WorkTime-<version>.apk`;
-- `SHA256SUMS.txt`;
-- `metadata.txt`;
-- `WorkTime-<version>-mapping.txt`.
-
-The release remains draft intentionally. Download that exact APK from GitHub, install/update it on the target phone, complete the physical-device checklist, verify its checksum and signer fingerprint, then publish the same draft. Do not rebuild a different APK after QA.
-
-## Why the permanent key stays out of GitHub
-
-Normal CI proves the signing plumbing with a disposable key. The real WorkTime key is more sensitive because direct-distribution Android updates depend permanently on its certificate and there is no store-side key reset layer. Keeping the private key offline reduces the number of systems that can expose the release identity.
-
-GitHub hosts only the final signed APK and non-secret verification files. A signed APK and public certificate reveal the public signing identity, not the private signing key.
-
-## Update continuity
+## Update continuity from 0.2.0 onward
 
 For every later release:
 
 - increment `versionCode`;
 - set the intended `versionName`;
-- sign with the same WorkTime app-signing certificate;
-- verify installation over the previous public APK without uninstalling;
+- sign with the same WorkTime `0.2.0+` certificate;
+- verify installation over the previous production APK without uninstalling;
 - confirm Room/DataStore data and the home-screen widget survive the update.
 
-Changing package name or signing certificate creates a different Android installation identity and is not a normal update path.
+Changing package name or signing certificate again creates another Android installation identity and must not be done as a routine release step.
 
-## CI signing smoke test
+## Why the permanent key stays out of GitHub
 
-Normal PR/main CI intentionally uses a disposable signing key in `signing-smoke`. It exercises the same release signing configuration, `assembleRelease`, `apksigner`, metadata and checksum path without using the real WorkTime key. The disposable APK is never uploaded or distributed.
+The WorkTime production key is more sensitive than an ordinary repository secret because Android update continuity depends permanently on it. Keeping it offline reduces the number of systems that can expose the release identity.
+
+GitHub may contain the final signed APK, the public certificate/fingerprint and verification metadata. None of those reveal the private key.

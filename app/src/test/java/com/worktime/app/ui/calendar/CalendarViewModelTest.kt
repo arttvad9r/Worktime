@@ -35,6 +35,7 @@ class CalendarViewModelTest {
             releaseFirstSave = CompletableDeferred()
         }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -60,6 +61,7 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000, note = "original")
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady && it.entries[entry.date] == entry }
 
@@ -81,6 +83,7 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000)
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.entries[entry.date] == entry }
 
@@ -104,6 +107,7 @@ class CalendarViewModelTest {
         )
         val repository = FakeWorkEntryRepository(entries)
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -129,6 +133,7 @@ class CalendarViewModelTest {
     fun `failed bulk operation does not expose undo`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList()).apply { bulkError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -153,6 +158,7 @@ class CalendarViewModelTest {
     fun `bulk rate rejects non-positive rates without repository call`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -172,6 +178,7 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000)
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.entries[entry.date] == entry }
 
@@ -186,6 +193,7 @@ class CalendarViewModelTest {
     fun `failed delete emits root error and leaves undo unavailable`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList()).apply { deleteError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -200,6 +208,7 @@ class CalendarViewModelTest {
     fun `empty bulk update is a no-op without undo`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -215,6 +224,7 @@ class CalendarViewModelTest {
         val replacement = entry.copy(note = "replacement")
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.entries[entry.date] == entry }
 
@@ -235,6 +245,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferencesRepository = FakeUserPreferencesRepository()
         val viewModel = CalendarViewModel(repository, preferencesRepository)
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -256,6 +267,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferences = FakeUserPreferencesRepository()
         val viewModel = CalendarViewModel(repository, preferences)
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -281,6 +293,7 @@ class CalendarViewModelTest {
             defaultRateInitialized = true,
         )
         val viewModel = CalendarViewModel(repository, preferencesRepository)
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -301,6 +314,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferences = FakeUserPreferencesRepository().apply { adoptionError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, preferences)
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -320,6 +334,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferences = FakeUserPreferencesRepository()
         val viewModel = CalendarViewModel(repository, preferences)
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -339,6 +354,7 @@ class CalendarViewModelTest {
         val preferences = FakeUserPreferencesRepository()
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, preferences)
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -361,6 +377,7 @@ class CalendarViewModelTest {
         )
         val repository = FakeWorkEntryRepository(entries)
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
         viewModel.changeRateForPeriod(entries.first().date, entries.last().date, 20_000_000)
@@ -384,6 +401,7 @@ class CalendarViewModelTest {
             bulkError = IllegalStateException()
         }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -411,6 +429,7 @@ class CalendarViewModelTest {
     fun `opening rate period editor exposes the change rate flow`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
@@ -429,6 +448,7 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000)
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
         viewModel.openChangeRate(null)
@@ -444,6 +464,7 @@ class CalendarViewModelTest {
     fun `failed bulk rate update keeps the change rate sheet open`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList()).apply { bulkError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
         viewModel.openChangeRate(null)
@@ -467,6 +488,7 @@ class CalendarViewModelTest {
         repository.restoreStarted = restoreStarted
         repository.releaseRestore = releaseRestore
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
+        viewModel.showMonth(YearMonth.of(2026, 8))
         val stateJob = launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 

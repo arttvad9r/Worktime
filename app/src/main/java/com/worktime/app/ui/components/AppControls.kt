@@ -32,9 +32,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 
@@ -59,16 +61,18 @@ fun AppSegmentedControl(
     if (options.isEmpty()) return
 
     val haptics = LocalHapticFeedback.current
+    val largeFont = LocalDensity.current.fontScale >= 1.3f
+    val controlHeight = if (largeFont) 56.dp else AppDimens.compactControlHeight
 
     BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
-            .height(AppDimens.compactControlHeight)
+            .height(controlHeight)
             .clip(MaterialTheme.shapes.small)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.46f))
+            .background(MaterialTheme.colorScheme.surfaceContainer)
             .border(
                 width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
                 shape = MaterialTheme.shapes.small,
             ),
     ) {
@@ -91,7 +95,7 @@ fun AppSegmentedControl(
                 .fillMaxHeight()
                 .padding(3.dp)
                 .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.secondaryContainer),
+                .background(MaterialTheme.colorScheme.primaryContainer),
         )
 
         Row(
@@ -104,7 +108,7 @@ fun AppSegmentedControl(
                 val interactionSource = remember(index) { MutableInteractionSource() }
                 val contentColor by animateColorAsState(
                     targetValue = if (selected) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
+                        MaterialTheme.colorScheme.onPrimaryContainer
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
@@ -129,15 +133,21 @@ fun AppSegmentedControl(
                                     onSelect(index)
                                 }
                             },
-                        ),
+                        )
+                        .padding(horizontal = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = option,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
+                        style = if (largeFont) {
+                            MaterialTheme.typography.labelMedium
+                        } else {
+                            MaterialTheme.typography.bodyMedium
+                        },
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                         color = contentColor,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -163,7 +173,7 @@ fun AppPrimaryButton(
         Text(
             text = text,
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }

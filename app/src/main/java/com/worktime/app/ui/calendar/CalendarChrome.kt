@@ -33,7 +33,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -71,12 +70,13 @@ internal fun TodayEntryPrompt(
                 imageVector = Icons.Filled.Add,
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary,
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.fill_today),
                 style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
             )
         }
     }
@@ -181,7 +181,7 @@ internal fun MonthPickerDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = { shownYear -= 1 },
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowLeft,
@@ -197,7 +197,7 @@ internal fun MonthPickerDialog(
                 )
                 IconButton(
                     onClick = { shownYear += 1 },
-                    modifier = Modifier.size(40.dp),
+                    modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
                         Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -207,9 +207,9 @@ internal fun MonthPickerDialog(
             }
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 monthLabels.chunked(3).forEach { row ->
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         row.forEach { (month, label) ->
                             val selected = shownYear == visibleMonth.year &&
                                 month == visibleMonth.monthValue
@@ -222,16 +222,17 @@ internal fun MonthPickerDialog(
                                         modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center,
                                         style = MaterialTheme.typography.labelMedium,
+                                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
                                         maxLines = 1,
                                     )
                                 },
                                 modifier = Modifier.weight(1f),
                                 border = null,
                                 colors = FilterChipDefaults.filterChipColors(
-                                    containerColor = Color.Transparent,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
                                     labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 ),
                             )
                         }
@@ -240,5 +241,8 @@ internal fun MonthPickerDialog(
             }
         },
         confirmButton = {},
+        shape = MaterialTheme.shapes.extraLarge,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 0.dp,
     )
 }

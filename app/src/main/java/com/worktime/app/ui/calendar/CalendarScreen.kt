@@ -71,6 +71,12 @@ internal fun calendarLayoutMode(
 internal fun shouldExpandSummaryAfterToggle(targetValue: SheetValue): Boolean =
     targetValue != SheetValue.Expanded
 
+@OptIn(ExperimentalMaterial3Api::class)
+internal fun shouldShowSummaryHandle(
+    currentValue: SheetValue,
+    targetValue: SheetValue,
+): Boolean = currentValue != SheetValue.Hidden || targetValue != SheetValue.Hidden
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun CalendarScreen(
@@ -121,6 +127,10 @@ fun CalendarScreen(
         bottomSheetState = summarySheetState,
     )
     val summaryTargetExpanded = summarySheetState.targetValue == SheetValue.Expanded
+    val summaryHandleVisible = shouldShowSummaryHandle(
+        currentValue = summarySheetState.currentValue,
+        targetValue = summarySheetState.targetValue,
+    )
     val closeSummaryBehind: (() -> Unit) -> Unit = { action ->
         val shouldHide = summarySheetState.currentValue != SheetValue.Hidden ||
             summarySheetState.targetValue != SheetValue.Hidden
@@ -168,9 +178,11 @@ fun CalendarScreen(
                 Spacer(modifier = Modifier.height(1.dp))
             } else {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    if (summaryTargetExpanded) {
+                    if (summaryHandleVisible) {
                         PlainDragHandle(
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .testTag("monthly-summary-handle"),
                             onClick = toggleSummary,
                             accessibilityLabel = stringResource(R.string.monthly_summary),
                         )

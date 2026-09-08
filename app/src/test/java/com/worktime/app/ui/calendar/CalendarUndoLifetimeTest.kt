@@ -31,6 +31,7 @@ class CalendarUndoLifetimeTest {
         val preferences = RecreatedProcessPreferencesRepository()
 
         val firstViewModel = CalendarViewModel(repository, preferences)
+        firstViewModel.showMonth(YearMonth.of(2026, 8))
         val firstStateJob = launch { firstViewModel.state.collect() }
         firstViewModel.state.first { it.isReady && it.entries[entry.date] == entry }
 
@@ -46,6 +47,7 @@ class CalendarUndoLifetimeTest {
         // A fresh ViewModel models the state available after process recreation: repository
         // data survives, but the previous ViewModel's in-memory UndoSnapshot does not.
         val recreatedViewModel = CalendarViewModel(repository, preferences)
+        recreatedViewModel.showMonth(YearMonth.of(2026, 8))
         val recreatedStateJob = launch { recreatedViewModel.state.collect() }
         val recreatedState = recreatedViewModel.state.first { it.isReady }
         assertFalse(recreatedState.canUndo)

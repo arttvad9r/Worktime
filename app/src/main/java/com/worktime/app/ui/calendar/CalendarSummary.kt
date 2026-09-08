@@ -3,6 +3,7 @@ package com.worktime.app.ui.calendar
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
@@ -56,13 +58,19 @@ internal fun SummaryStrip(
     modifier: Modifier = Modifier,
 ) {
     val summary = state.summary
-    val summaryText = summaryLine(
+    val detailText = summaryLine(
         shiftCount = summary.shiftCount,
         workedMinutes = summary.workedMinutes,
-        totalPayMicros = summary.totalPayMicros,
         locale = locale,
     )
+    val amountText = stringResource(
+        R.string.amount_with_currency,
+        formatWholeAmountMicros(summary.totalPayMicros, locale),
+    )
+    val summaryText = "$detailText · $amountText"
     val haptics = LocalHapticFeedback.current
+    val largeFont = LocalDensity.current.fontScale >= 1.3f
+    val stripHeight = if (largeFont) 72.dp else 56.dp
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 180f else 0f,
         animationSpec = tween(
@@ -75,7 +83,7 @@ internal fun SummaryStrip(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .height(56.dp),
+            .height(stripHeight),
     ) {
         Row(
             modifier = Modifier
@@ -122,29 +130,59 @@ internal fun SummaryStrip(
                     )
                 }
                 .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.68f))
+                .border(
+                    width = 1.dp,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.20f),
+                    shape = MaterialTheme.shapes.medium,
+                )
                 .clickable(
                     onClickLabel = stringResource(R.string.monthly_summary),
                     onClick = onClick,
                 )
                 .testTag("monthly-summary-strip")
-                .padding(horizontal = AppDimens.screenHorizontalPadding),
+                .padding(horizontal = if (largeFont) 12.dp else AppDimens.screenHorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = summaryText,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-            )
+            if (largeFont) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = detailText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = amountText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                    )
+                }
+            } else {
+                Text(
+                    text = summaryText,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                )
+            }
             Icon(
                 Icons.Filled.KeyboardArrowUp,
                 modifier = Modifier.graphicsLayer { rotationZ = chevronRotation },
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                tint = MaterialTheme.colorScheme.primary,
             )
         }
     }
@@ -213,7 +251,7 @@ internal fun MonthlySummaryPanel(
                 color = if (shouldUseErrorColorForTotal(summary.totalPayMicros)) {
                     MaterialTheme.colorScheme.error
                 } else {
-                    MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.colorScheme.primary
                 },
                 maxLines = 1,
             )
@@ -241,7 +279,7 @@ internal fun MonthlySummaryPanel(
                 )
             }
 
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.82f))
 
             if (summary.shiftCount > 0) {
                 LabelValueRow(

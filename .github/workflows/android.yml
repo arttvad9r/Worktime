@@ -36,6 +36,7 @@ jobs:
             :app:validateDebugScreenshotTest \
             :app:lintDebug \
             :app:lintRelease \
+            :app:analyzeReleaseR8Config \
             :app:assembleDebug \
             :app:assembleDebugAndroidTest \
             :app:assembleRelease \
@@ -43,6 +44,13 @@ jobs:
             :macrobenchmark:assembleBenchmark \
             :baselineprofile:assemble \
             --stacktrace
+      - name: Verify packaged Baseline Profile
+        run: |
+          APK="$(find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print -quit)"
+          test -n "$APK"
+          echo "Inspecting $APK"
+          unzip -l "$APK" | tee "$RUNNER_TEMP/release-apk-entries.txt"
+          grep -F 'assets/dexopt/baseline.prof' "$RUNNER_TEMP/release-apk-entries.txt"
       - name: Upload verification reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -55,6 +63,7 @@ jobs:
             app/build/reports/lint-results-debug.xml
             app/build/reports/lint-results-release.html
             app/build/reports/lint-results-release.xml
+            app/build/reports/r8/
           if-no-files-found: ignore
           retention-days: 14
       - name: Upload debug APK

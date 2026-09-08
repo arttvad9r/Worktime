@@ -1,5 +1,6 @@
 package com.worktime.app.ui.dayeditor
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -7,12 +8,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worktime.app.R
 import com.worktime.app.domain.calculation.SalaryCalculator
@@ -29,50 +33,63 @@ internal fun CalculationSummary(
     if (draft == null || totalMicros == null) return
     val locale = LocalLocale.current.platformLocale
     val entryPay = SalaryCalculator.entryPay(draft)
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 0.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        CalculationRow(
-            label = stringResource(
-                R.string.calc_expression,
-                formatDurationCompact(draft.workedMinutes),
-                formatDecimalMicros(draft.hourlyRateMicros),
-            ),
-            value = stringResource(
-                R.string.amount_with_currency,
-                formatAmountMicros(entryPay.basePayMicros, locale),
-            ),
-        )
-        if (draft.bonusMicros > 0L) {
+        Column(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 11.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             CalculationRow(
-                label = stringResource(R.string.calculation_bonus),
-                value = "+" + stringResource(
+                label = stringResource(
+                    R.string.calc_expression,
+                    formatDurationCompact(draft.workedMinutes),
+                    formatDecimalMicros(draft.hourlyRateMicros),
+                ),
+                value = stringResource(
                     R.string.amount_with_currency,
-                    formatAmountMicros(draft.bonusMicros, locale),
+                    formatAmountMicros(entryPay.basePayMicros, locale),
                 ),
             )
-        }
-        if (draft.penaltyMicros > 0L) {
+            if (draft.bonusMicros > 0L) {
+                CalculationRow(
+                    label = stringResource(R.string.calculation_bonus),
+                    value = "+" + stringResource(
+                        R.string.amount_with_currency,
+                        formatAmountMicros(draft.bonusMicros, locale),
+                    ),
+                )
+            }
+            if (draft.penaltyMicros > 0L) {
+                CalculationRow(
+                    label = stringResource(R.string.calculation_penalty),
+                    value = "−" + stringResource(
+                        R.string.amount_with_currency,
+                        formatAmountMicros(draft.penaltyMicros, locale),
+                    ),
+                )
+            }
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.82f),
+            )
             CalculationRow(
-                label = stringResource(R.string.calculation_penalty),
-                value = "−" + stringResource(
+                label = stringResource(R.string.calculation_total),
+                value = stringResource(
                     R.string.amount_with_currency,
-                    formatAmountMicros(draft.penaltyMicros, locale),
+                    formatAmountMicros(totalMicros, locale),
                 ),
+                emphasized = true,
+                valueColor = if (totalMicros < 0L) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    MaterialTheme.colorScheme.primary
+                },
             )
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-        CalculationRow(
-            label = stringResource(R.string.calculation_total),
-            value = stringResource(
-                R.string.amount_with_currency,
-                formatAmountMicros(totalMicros, locale),
-            ),
-            emphasized = true,
-        )
     }
 }
 
@@ -81,6 +98,7 @@ private fun CalculationRow(
     label: String,
     value: String,
     emphasized: Boolean = false,
+    valueColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     val textStyle = if (emphasized) {
         MaterialTheme.typography.titleMedium
@@ -95,20 +113,22 @@ private fun CalculationRow(
     }
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text(
             text = label,
+            modifier = Modifier.weight(1f),
             style = textStyle,
             fontWeight = fontWeight,
             color = labelColor,
             maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
         Text(
             text = value,
             style = textStyle,
             fontWeight = fontWeight,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = valueColor,
             maxLines = 1,
         )
     }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -18,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -30,6 +32,7 @@ fun AppSectionHeader(text: String, modifier: Modifier = Modifier) {
             bottom = AppDimens.rowGap,
         ),
         style = MaterialTheme.typography.labelMedium,
+        fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
@@ -42,16 +45,17 @@ fun AppNavigationRow(
     value: String? = null,
     subtitle: String? = null,
 ) {
+    val largeFont = LocalDensity.current.fontScale >= 1.3f
+    val minHeight = when {
+        largeFont && subtitle != null -> 72.dp
+        largeFont -> 64.dp
+        subtitle != null -> AppDimens.rowWithSubtitleMinHeight
+        else -> AppDimens.rowMinHeight
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(
-                min = if (subtitle == null) {
-                    AppDimens.rowMinHeight
-                } else {
-                    AppDimens.rowWithSubtitleMinHeight
-                },
-            )
+            .heightIn(min = minHeight)
             .clickable(onClick = onClick),
         horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
         verticalAlignment = Alignment.CenterVertically,
@@ -64,7 +68,7 @@ fun AppNavigationRow(
                 text = label,
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
+                maxLines = if (largeFont) 2 else 1,
             )
             if (subtitle != null) {
                 Text(
@@ -78,7 +82,7 @@ fun AppNavigationRow(
         if (value != null) {
             Text(
                 text = value,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
             )
@@ -86,7 +90,8 @@ fun AppNavigationRow(
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f),
         )
     }
 }
@@ -107,9 +112,9 @@ fun AppFieldValueSlot(
 fun AppSheetTitle(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        modifier = modifier.padding(top = 2.dp, bottom = 8.dp),
+        modifier = modifier.padding(top = 4.dp, bottom = 10.dp),
         style = MaterialTheme.typography.titleLarge,
-        fontWeight = FontWeight.Medium,
+        fontWeight = FontWeight.SemiBold,
         maxLines = 1,
     )
 }

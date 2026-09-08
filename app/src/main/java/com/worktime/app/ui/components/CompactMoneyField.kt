@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.contentDescription
@@ -40,40 +41,61 @@ import androidx.compose.ui.unit.dp
 import com.worktime.app.ui.format.sanitizeMoneyInput
 
 /**
- * Shared visual chrome for every compact inline numeric editor. The border is the only
- * animated part: a short color transition gives error/focus feedback without moving layout.
+ * Shared visual chrome for compact inline numeric editors.
+ *
+ * The host row owns the large touch/layout rhythm. The painted editor is intentionally
+ * much smaller: idle state is only a quiet fill, while focus/error adds a thin outline.
+ * This avoids the nested-card look that made numeric fields dominate their labels.
  */
 @Composable
 fun CompactInputChrome(
     isError: Boolean,
     modifier: Modifier = Modifier,
+    focused: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isError) {
-            MaterialTheme.colorScheme.error
-        } else {
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f)
+        targetValue = when {
+            isError -> MaterialTheme.colorScheme.error
+            focused -> MaterialTheme.colorScheme.primary
+            else -> Color.Transparent
         },
-        animationSpec = tween(AppDimens.feedbackAnimationMillis),
+        animationSpec = tween(
+            durationMillis = AppMotion.FastMillis,
+            easing = AppMotion.StandardEasing,
+        ),
         label = "compact-input-border",
+    )
+    val containerColor by animateColorAsState(
+        targetValue = if (focused || isError) {
+            MaterialTheme.colorScheme.surfaceContainerLowest
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.30f)
+        },
+        animationSpec = tween(
+            durationMillis = AppMotion.FastMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "compact-input-container",
     )
 
     Surface(
         modifier = modifier
             .width(AppDimens.compactFieldWidth)
             .height(AppDimens.compactFieldHeight),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceContainerLowest,
-        border = BorderStroke(
-            width = 1.dp,
-            color = borderColor,
-        ),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = containerColor,
+        tonalElevation = 0.dp,
+        border = if (focused || isError) {
+            BorderStroke(width = 1.dp, color = borderColor)
+        } else {
+            null
+        },
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = 6.dp),
             contentAlignment = Alignment.Center,
             content = content,
         )
@@ -98,6 +120,7 @@ fun CompactMoneyField(
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     var hadFocus by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
     var fieldValue by remember { mutableStateOf(TextFieldValue(text, TextRange(text.length))) }
     LaunchedEffect(text) {
         if (text != fieldValue.text) {
@@ -107,7 +130,11 @@ fun CompactMoneyField(
     LaunchedEffect(autoFocus) {
         if (autoFocus) focusRequester.requestFocus()
     }
-    CompactInputChrome(isError = isError, modifier = modifier) {
+    CompactInputChrome(
+        isError = isError,
+        focused = isFocused,
+        modifier = modifier,
+    ) {
         BasicTextField(
             value = fieldValue,
             onValueChange = { updated ->
@@ -122,6 +149,7 @@ fun CompactMoneyField(
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
                 .onFocusChanged { focusState ->
+                    isFocused = focusState.isFocused
                     if (focusState.isFocused) {
                         hadFocus = true
                         if (fieldValue.text == "0") {

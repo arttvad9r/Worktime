@@ -30,7 +30,7 @@ fun AppTopBar(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
             )
         },

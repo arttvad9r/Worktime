@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -28,7 +29,7 @@ class PrivacyDataUiTest {
         ApplicationProvider.getApplicationContext<android.content.Context>().getString(res)
 
     @Test
-    fun settingsOpensScrollablePrivacyDataSheet() {
+    fun settingsFooterOpensScrollablePrivacyPageAndReturnsToSettings() {
         composeRule.setContent {
             WorkTimeTheme {
                 Box(Modifier.size(320.dp, 720.dp)) {
@@ -53,9 +54,21 @@ class PrivacyDataUiTest {
             .assertIsDisplayed()
             .performClick()
 
+        composeRule.onNodeWithText(string(R.string.privacy_intro_text))
+            .assertIsDisplayed()
         composeRule.onNodeWithText(string(R.string.privacy_stored_data_title))
             .assertIsDisplayed()
-        composeRule.onNodeWithText(string(R.string.privacy_deletion_title))
+        composeRule.onNodeWithText(string(R.string.privacy_policy_title))
+            .performScrollTo()
+            .assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription(string(R.string.back))
+            .performScrollTo()
+            .assertIsDisplayed()
+            .performClick()
+
+        composeRule.onNodeWithText(string(R.string.settings)).assertIsDisplayed()
+        composeRule.onNodeWithText(string(R.string.export_data))
             .performScrollTo()
             .assertIsDisplayed()
     }

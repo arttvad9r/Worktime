@@ -20,6 +20,11 @@ internal fun fullScreenEnterTransition(direction: Int): EnterTransition =
             stiffness = AppMotion.NavigationStiffness,
         ),
         initialOffsetX = { width -> direction * width / 5 },
+    ) + fadeIn(
+        animationSpec = tween(
+            durationMillis = AppMotion.FastMillis,
+            easing = AppMotion.StandardEasing,
+        ),
     )
 
 internal fun fullScreenExitTransition(direction: Int): ExitTransition =
@@ -29,6 +34,11 @@ internal fun fullScreenExitTransition(direction: Int): ExitTransition =
             stiffness = AppMotion.NavigationStiffness,
         ),
         targetOffsetX = { width -> direction * width },
+    ) + fadeOut(
+        animationSpec = tween(
+            durationMillis = AppMotion.StandardMillis,
+            easing = AppMotion.StandardEasing,
+        ),
     )
 
 internal fun yearSummaryEnterTransition(): EnterTransition =
