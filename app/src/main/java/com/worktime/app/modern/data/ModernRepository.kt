@@ -10,6 +10,7 @@ import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
 import com.worktime.app.modern.model.WorkDay
 import java.time.LocalDate
+import java.util.Currency
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -39,7 +40,13 @@ class ModernRepository(private val database: ModernDatabase) {
 
     suspend fun saveDay(day: WorkDay) {
         validateDay(day)
-        if (day.workedMinutes == 0 && day.bonusMinor == 0L && day.penaltyMinor == 0L && day.note.isBlank()) {
+        if (
+            day.workedMinutes == 0 &&
+            day.bonusMinor == 0L &&
+            day.penaltyMinor == 0L &&
+            day.otherMinor == 0L &&
+            day.note.isBlank()
+        ) {
             workDays.delete(day.date.toEpochDay())
         } else {
             workDays.upsert(day.toEntity())
@@ -71,7 +78,7 @@ class ModernRepository(private val database: ModernDatabase) {
         val current = settingsDao.get()?.toModel() ?: AppSettings()
         val updated = transform(current)
         require(MoneyRules.isValid(updated.defaultRateMinor))
-        require(updated.currencyCode.matches(Regex("[A-Z]{3}")))
+        require(isCurrencyCodeValid(updated.currencyCode))
         settingsDao.upsert(updated.toEntity())
     }
 
@@ -86,6 +93,7 @@ class ModernRepository(private val database: ModernDatabase) {
                 hourlyRateMinor = it.hourlyRateMinor,
                 bonusMinor = it.bonusMinor,
                 penaltyMinor = it.penaltyMinor,
+                otherMinor = it.otherMinor,
                 note = it.note,
             )
         },
@@ -96,7 +104,7 @@ class ModernRepository(private val database: ModernDatabase) {
 
     suspend fun restoreBackup(payload: ModernBackupPayload) {
         require(MoneyRules.isValid(payload.settings.defaultRateMinor))
-        require(payload.settings.currencyCode.matches(Regex("[A-Z]{3}")))
+        require(isCurrencyCodeValid(payload.settings.currencyCode))
         ThemeMode.valueOf(payload.settings.themeMode)
         payload.workDays.forEach {
             validateDay(
@@ -106,6 +114,7 @@ class ModernRepository(private val database: ModernDatabase) {
                     hourlyRateMinor = it.hourlyRateMinor,
                     bonusMinor = it.bonusMinor,
                     penaltyMinor = it.penaltyMinor,
+                    otherMinor = it.otherMinor,
                     note = it.note,
                 ),
             )
@@ -124,7 +133,15 @@ class ModernRepository(private val database: ModernDatabase) {
             settingsDao.deleteAll()
             if (payload.workDays.isNotEmpty()) {
                 workDays.upsertAll(payload.workDays.map {
-                    WorkDayEntity(it.epochDay, it.workedMinutes, it.hourlyRateMinor, it.bonusMinor, it.penaltyMinor, it.note)
+                    WorkDayEntity(
+                        epochDay = it.epochDay,
+                        workedMinutes = it.workedMinutes,
+                        hourlyRateMinor = it.hourlyRateMinor,
+                        bonusMinor = it.bonusMinor,
+                        penaltyMinor = it.penaltyMinor,
+                        otherMinor = it.otherMinor,
+                        note = it.note,
+                    )
                 })
             }
             if (payload.ratePeriods.isNotEmpty()) {
@@ -147,8 +164,12 @@ class ModernRepository(private val database: ModernDatabase) {
         require(MoneyRules.isValid(day.hourlyRateMinor))
         require(MoneyRules.isValid(day.bonusMinor))
         require(MoneyRules.isValid(day.penaltyMinor))
+        require(MoneyRules.isSignedAdjustmentValid(day.otherMinor))
         require(day.note.length <= 2_000)
     }
+
+    private fun isCurrencyCodeValid(code: String): Boolean =
+        code.matches(Regex("[A-Z]{3}")) && runCatching { Currency.getInstance(code) }.isSuccess
 
     private fun WorkDayEntity.toModel() = WorkDay(
         date = LocalDate.ofEpochDay(epochDay),
@@ -156,6 +177,7 @@ class ModernRepository(private val database: ModernDatabase) {
         hourlyRateMinor = hourlyRateMinor,
         bonusMinor = bonusMinor,
         penaltyMinor = penaltyMinor,
+        otherMinor = otherMinor,
         note = note,
     )
 
@@ -165,6 +187,7 @@ class ModernRepository(private val database: ModernDatabase) {
         hourlyRateMinor = hourlyRateMinor,
         bonusMinor = bonusMinor,
         penaltyMinor = penaltyMinor,
+        otherMinor = otherMinor,
         note = note,
     )
 
