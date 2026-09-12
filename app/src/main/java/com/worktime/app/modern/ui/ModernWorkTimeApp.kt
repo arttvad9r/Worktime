@@ -1,10 +1,9 @@
 package com.worktime.app.modern.ui
 
-import androidx.activity.compose.BackHandler
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,32 +18,37 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import com.worktime.app.R
 import com.worktime.app.modern.ModernViewModel
 import java.time.YearMonth
-
-enum class ModernDestination { CALENDAR, MONTH_REPORT, YEAR_REPORT, SETTINGS }
 
 private val ModernContentMaxWidth = 720.dp
 
 @Composable
 fun ModernWorkTimeApp(viewModel: ModernViewModel) {
-    var destination by remember { mutableStateOf(ModernDestination.CALENDAR) }
     val month by viewModel.selectedMonth.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
+    val backStack = rememberNavBackStack(ModernDestination.Calendar)
 
-    BackHandler(enabled = destination != ModernDestination.CALENDAR) {
-        destination = when (destination) {
-            ModernDestination.YEAR_REPORT -> ModernDestination.MONTH_REPORT
-            else -> ModernDestination.CALENDAR
+    fun popDestination() {
+        if (backStack.size > 1) {
+            backStack.removeLastOrNull()
+        }
+    }
+
+    fun pushDestination(destination: ModernDestination) {
+        if (backStack.lastOrNull() != destination) {
+            backStack.add(destination)
         }
     }
 
@@ -54,54 +58,74 @@ fun ModernWorkTimeApp(viewModel: ModernViewModel) {
             .windowInsetsPadding(WindowInsets.safeDrawing),
         contentAlignment = Alignment.TopCenter,
     ) {
-        AnimatedContent(
-            targetState = destination,
+        NavDisplay(
+            backStack = backStack,
             modifier = Modifier
                 .fillMaxHeight()
                 .widthIn(max = ModernContentMaxWidth)
                 .fillMaxWidth(),
+            onBack = ::popDestination,
+            entryDecorators = listOf(
+                rememberSaveableStateHolderNavEntryDecorator(),
+                rememberViewModelStoreNavEntryDecorator(),
+            ),
             transitionSpec = {
-                val forward = targetState.ordinal > initialState.ordinal
-                val enter = if (forward) {
-                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left) + fadeIn()
-                } else {
-                    slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right) + fadeIn()
-                }
-                val exit = if (forward) {
-                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left) + fadeOut()
-                } else {
-                    slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right) + fadeOut()
-                }
-                enter togetherWith exit
+                (slideInHorizontally { it / 3 } + fadeIn()) togetherWith
+                    (slideOutHorizontally { -it / 3 } + fadeOut())
             },
-            label = "app_navigation",
-        ) { target ->
-            when (target) {
-                ModernDestination.CALENDAR -> CalendarScreen(
-                    viewModel = viewModel,
-                    onOpenMonthReport = { destination = ModernDestination.MONTH_REPORT },
-                    onOpenSettings = { destination = ModernDestination.SETTINGS },
-                )
-                ModernDestination.MONTH_REPORT -> MonthReportScreen(
-                    viewModel = viewModel,
-                    onBack = { destination = ModernDestination.CALENDAR },
-                    onOpenYear = { destination = ModernDestination.YEAR_REPORT },
-                )
-                ModernDestination.YEAR_REPORT -> YearReportScreen(
-                    viewModel = viewModel,
-                    onBack = { destination = ModernDestination.MONTH_REPORT },
-                    onOpenMonth = { selected: YearMonth ->
-                        viewModel.selectMonth(selected)
-                        destination = ModernDestination.MONTH_REPORT
-                    },
-                )
-                ModernDestination.SETTINGS -> SettingsScreen(
-                    viewModel = viewModel,
-                    onBack = { destination = ModernDestination.CALENDAR },
-                    currentMonth = month,
-                )
-            }
-        }
+            popTransitionSpec = {
+                (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith
+                    (slideOutHorizontally { it / 3 } + fadeOut())
+            },
+            predictivePopTransitionSpec = { _ ->
+                (slideInHorizontally { -it / 3 } + fadeIn()) togetherWith
+                    (slideOutHorizontally { it / 3 } + fadeOut())
+            },
+            entryProvider = entryProvider {
+                entry<ModernDestination.Calendar> {
+                    CalendarScreen(
+                        viewModel = viewModel,
+                        onOpenMonthReport = {
+                            pushDestination(ModernDestination.MonthReport)
+                        },
+                        onOpenSettings = {
+                            pushDestination(ModernDestination.Settings)
+                        },
+                    )
+                }
+                entry<ModernDestination.MonthReport> {
+                    MonthReportScreen(
+                        viewModel = viewModel,
+                        onBack = ::popDestination,
+                        onOpenYear = {
+                            pushDestination(ModernDestination.YearReport)
+                        },
+                    )
+                }
+                entry<ModernDestination.YearReport> {
+                    YearReportScreen(
+                        viewModel = viewModel,
+                        onBack = ::popDestination,
+                        onOpenMonth = { selected: YearMonth ->
+                            viewModel.selectMonth(selected)
+                            if (backStack.lastOrNull() == ModernDestination.YearReport) {
+                                backStack.removeLastOrNull()
+                            }
+                            if (backStack.lastOrNull() != ModernDestination.MonthReport) {
+                                backStack.add(ModernDestination.MonthReport)
+                            }
+                        },
+                    )
+                }
+                entry<ModernDestination.Settings> {
+                    SettingsScreen(
+                        viewModel = viewModel,
+                        onBack = ::popDestination,
+                        currentMonth = month,
+                    )
+                }
+            },
+        )
     }
 
     lastError?.let { error ->
