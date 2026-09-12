@@ -38,6 +38,15 @@ class ModernRepository(private val database: ModernDatabase) {
         return settingsDao.get()?.defaultRateMinor ?: 0L
     }
 
+    suspend fun countDays(start: LocalDate, endInclusive: LocalDate?): Int {
+        require(endInclusive == null || !endInclusive.isBefore(start))
+        return if (endInclusive == null) {
+            workDays.countFrom(start.toEpochDay())
+        } else {
+            workDays.countInRange(start.toEpochDay(), endInclusive.toEpochDay())
+        }
+    }
+
     suspend fun saveDay(day: WorkDay) {
         validateDay(day)
         if (
