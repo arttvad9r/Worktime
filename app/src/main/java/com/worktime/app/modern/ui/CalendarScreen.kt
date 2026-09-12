@@ -44,6 +44,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -57,6 +59,8 @@ import com.worktime.app.modern.model.WorkTimeMath
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.format.TextStyle
 
 @Composable
@@ -229,6 +233,27 @@ private fun DayCell(
     onClick: () -> Unit,
 ) {
     val today = inMonth && date == LocalDate.now()
+    val locale = LocalConfiguration.current.locales[0]
+    val localizedDate = remember(date, locale) {
+        date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale))
+    }
+    val spokenDate = if (today) {
+        stringResource(R.string.modern_today_date, localizedDate)
+    } else {
+        localizedDate
+    }
+    val durationText = entry?.let { formatDuration(it.workedMinutes) }
+    val earningsText = entry?.let { formatMoney(WorkTimeMath.payForDay(it).totalMinor, currencyCode) }
+    val accessibilityDescription = when {
+        !inMonth -> spokenDate
+        entry == null -> stringResource(R.string.modern_day_a11y_empty, spokenDate)
+        else -> stringResource(
+            R.string.modern_day_a11y_entry,
+            spokenDate,
+            durationText.orEmpty(),
+            earningsText.orEmpty(),
+        )
+    }
     val container = when {
         today -> MaterialTheme.colorScheme.primaryContainer
         entry != null -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.62f)
@@ -251,6 +276,9 @@ private fun DayCell(
             modifier = Modifier
                 .fillMaxSize()
                 .clickable(enabled = inMonth, onClick = onClick)
+                .semantics(mergeDescendants = true) {
+                    contentDescription = accessibilityDescription
+                }
                 .padding(horizontal = 4.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -262,14 +290,14 @@ private fun DayCell(
             if (entry != null) {
                 Spacer(Modifier.weight(1f))
                 Text(
-                    text = formatMinutes(entry.workedMinutes),
+                    text = durationText.orEmpty(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.labelSmall,
                     color = content,
                 )
                 Text(
-                    text = formatMoney(WorkTimeMath.payForDay(entry).totalMinor, currencyCode),
+                    text = earningsText.orEmpty(),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.labelSmall,
@@ -307,7 +335,7 @@ private fun MonthSummaryPanel(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "$shifts · ${formatMinutes(summary.workedMinutes)}",
+                        text = "$shifts · ${formatDuration(summary.workedMinutes)}",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
