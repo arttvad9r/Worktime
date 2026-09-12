@@ -1,10 +1,13 @@
 package com.worktime.app.modern
 
+import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.WorkDay
 import com.worktime.app.modern.model.WorkTimeMath
 import java.time.LocalDate
 import java.time.YearMonth
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class ModernCalculationsTest {
@@ -43,5 +46,13 @@ class ModernCalculationsTest {
         assertEquals(1_000, summary.bonusMinor)
         assertEquals(500, summary.penaltyMinor)
         assertEquals(160_500, summary.totalMinor)
+    }
+
+    @Test
+    fun `money boundary is shared by all modern calculations`() {
+        assertTrue(MoneyRules.isValid(0L))
+        assertTrue(MoneyRules.isValid(MoneyRules.MAX_MINOR))
+        assertFalse(MoneyRules.isValid(-1L))
+        assertFalse(MoneyRules.isValid(MoneyRules.MAX_MINOR + 1L))
     }
 }
