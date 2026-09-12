@@ -11,15 +11,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -104,7 +103,7 @@ fun YearReportScreen(
                 Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
             }
             IconButton(onClick = viewModel::previousYear) {
-                Icon(Icons.Default.ChevronLeft, contentDescription = "Предыдущий год")
+                Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Предыдущий год")
             }
             Text(
                 text = year.toString(),
@@ -114,7 +113,7 @@ fun YearReportScreen(
                 fontWeight = FontWeight.SemiBold,
             )
             IconButton(onClick = viewModel::nextYear) {
-                Icon(Icons.Default.ChevronRight, contentDescription = "Следующий год")
+                Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Следующий год")
             }
             Spacer(Modifier.width(48.dp))
         }
@@ -240,8 +239,10 @@ private fun MonthIncomeRow(
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    month.month.month.getDisplayName(java.time.format.TextStyle.FULL_STANDALONE, java.util.Locale.forLanguageTag("ru-RU"))
-                        .replaceFirstChar { it.titlecase() },
+                    month.month.month.getDisplayName(
+                        java.time.format.TextStyle.FULL_STANDALONE,
+                        java.util.Locale.forLanguageTag("ru-RU"),
+                    ).replaceFirstChar { it.titlecase() },
                     modifier = Modifier.weight(1f),
                     fontWeight = FontWeight.Medium,
                 )
