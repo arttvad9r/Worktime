@@ -32,6 +32,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,7 +49,6 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.time.format.TextStyle
-import java.util.Locale
 
 @Composable
 fun MonthReportScreen(
@@ -214,7 +214,7 @@ private fun SummaryCard(summary: PeriodSummary, currencyCode: String) {
 @Composable
 private fun DayReportRow(day: WorkDay, currencyCode: String) {
     val pay = remember(day) { WorkTimeMath.payForDay(day) }
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val dateText = remember(day.date, locale) {
         day.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(locale))
     }
@@ -249,7 +249,7 @@ private fun MonthIncomeRow(
     onClick: () -> Unit,
 ) {
     val fraction = (month.summary.totalMinor.coerceAtLeast(0L).toDouble() / maxIncome.toDouble()).toFloat()
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val monthName = remember(month.month, locale) {
         month.month.month.getDisplayName(TextStyle.FULL_STANDALONE, locale)
             .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
