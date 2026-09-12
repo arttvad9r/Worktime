@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.worktime.app.modern.ModernViewModel
+import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.WorkDay
 import com.worktime.app.modern.model.WorkTimeMath
 
@@ -63,12 +64,15 @@ fun DayEditorSheet(
     val rateValue = parseMoneyMinor(rate)
     val bonusValue = parseMoneyMinor(bonus)
     val penaltyValue = parseMoneyMinor(penalty)
+    val safeRate = rateValue ?: 0L
+    val safeBonus = bonusValue ?: 0L
+    val safePenalty = penaltyValue ?: 0L
     val workedMinutes = if (hourValue != null && minuteValue != null) hourValue * 60 + minuteValue else -1
     val valid = hourValue != null && hourValue in 0..24 &&
         minuteValue != null && minuteValue in 0..59 && workedMinutes in 0..1440 &&
-        rateValue != null && rateValue >= 0L &&
-        bonusValue != null && bonusValue >= 0L &&
-        penaltyValue != null && penaltyValue >= 0L
+        rateValue != null && MoneyRules.isValid(rateValue) &&
+        bonusValue != null && MoneyRules.isValid(bonusValue) &&
+        penaltyValue != null && MoneyRules.isValid(penaltyValue)
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -137,9 +141,9 @@ fun DayEditorSheet(
                 val preview = WorkDay(
                     date = state.date,
                     workedMinutes = workedMinutes,
-                    hourlyRateMinor = rateValue!!,
-                    bonusMinor = bonusValue!!,
-                    penaltyMinor = penaltyValue!!,
+                    hourlyRateMinor = safeRate,
+                    bonusMinor = safeBonus,
+                    penaltyMinor = safePenalty,
                 )
                 val pay = WorkTimeMath.payForDay(preview)
                 Spacer(Modifier.height(10.dp))
@@ -173,7 +177,7 @@ fun DayEditorSheet(
                     }
                 }
                 Button(
-                    onClick = { onSave(workedMinutes, rateValue!!, bonusValue!!, penaltyValue!!, note) },
+                    onClick = { onSave(workedMinutes, safeRate, safeBonus, safePenalty, note) },
                     enabled = valid,
                     modifier = Modifier.weight(1f),
                 ) { Text("Сохранить") }
@@ -201,6 +205,6 @@ private fun MoneyField(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
         modifier = modifier,
         singleLine = true,
-        isError = parsed == null || parsed < 0L,
+        isError = parsed == null || !MoneyRules.isValid(parsed),
     )
 }
