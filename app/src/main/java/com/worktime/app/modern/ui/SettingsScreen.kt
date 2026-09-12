@@ -1,6 +1,5 @@
 package com.worktime.app.modern.ui
 
-import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -55,7 +53,7 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val pendingImport by viewModel.pendingImport.collectAsStateWithLifecycle()
-    val error by viewModel.lastError.collectAsStateWithLifecycle()
+    val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var defaultRateInput by remember(settings.defaultRateMinor) { mutableStateOf(moneyInput(settings.defaultRateMinor)) }
     var showMonthRate by remember { mutableStateOf(false) }
@@ -69,8 +67,8 @@ fun SettingsScreen(
         if (uri != null && text != null) {
             runCatching {
                 context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(text) }
-                    ?: error("Не удалось открыть файл")
-            }
+                    ?: kotlin.error("Не удалось открыть файл")
+            }.onFailure { viewModel.reportError(it.message ?: "Не удалось сохранить резервную копию") }
         }
         exportText = null
     }
@@ -78,8 +76,9 @@ fun SettingsScreen(
         if (uri != null) {
             runCatching {
                 context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                    ?: error("Не удалось прочитать файл")
+                    ?: kotlin.error("Не удалось прочитать файл")
             }.onSuccess(viewModel::stageImport)
+                .onFailure { viewModel.reportError(it.message ?: "Не удалось прочитать резервную копию") }
         }
     }
 
@@ -227,7 +226,7 @@ fun SettingsScreen(
             dismissButton = { TextButton(onClick = viewModel::cancelImport) { Text("Отмена") } },
         )
     }
-    error?.let { message ->
+    lastError?.let { message ->
         AlertDialog(
             onDismissRequest = viewModel::consumeError,
             title = { Text("Ошибка") },
