@@ -190,7 +190,7 @@ fun DayEditorSheet(
                             .padding(14.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        Text(formatMinutes(workedMinutes))
+                        Text(formatDuration(workedMinutes))
                         Text(formatMoney(pay.totalMinor, currencyCode), fontWeight = FontWeight.Bold)
                     }
                 }
