@@ -315,6 +315,7 @@ private fun MonthSummaryPanel(
                     SummaryRow("По сменам", formatMoney(summary.baseMinor, currencyCode))
                     SummaryRow("Премии", formatMoney(summary.bonusMinor, currencyCode))
                     SummaryRow("Штрафы", "−${formatMoney(summary.penaltyMinor, currencyCode)}")
+                    SummaryRow("Прочее", formatMoney(summary.otherMinor, currencyCode))
                     Spacer(Modifier.height(6.dp))
                     FilledTonalButton(
                         onClick = onOpenReport,
