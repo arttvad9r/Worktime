@@ -8,6 +8,7 @@ import com.worktime.app.modern.backup.ModernBackupCodec
 import com.worktime.app.modern.backup.ModernBackupPayload
 import com.worktime.app.modern.data.ModernRepository
 import com.worktime.app.modern.model.AppSettings
+import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
 import com.worktime.app.modern.model.WorkDay
 import java.time.LocalDate
@@ -40,6 +41,13 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         val preview: BackupPreview,
     )
 
+    data class PendingRateChange(
+        val start: LocalDate,
+        val endInclusive: LocalDate?,
+        val rateMinor: Long,
+        val affectedExistingEntries: Int,
+    )
+
     private val _selectedMonth = MutableStateFlow(YearMonth.now())
     val selectedMonth: StateFlow<YearMonth> = _selectedMonth.asStateFlow()
 
@@ -65,6 +73,9 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
 
     private val _pendingImport = MutableStateFlow<ImportState?>(null)
     val pendingImport: StateFlow<ImportState?> = _pendingImport.asStateFlow()
+
+    private val _pendingRateChange = MutableStateFlow<PendingRateChange?>(null)
+    val pendingRateChange: StateFlow<PendingRateChange?> = _pendingRateChange.asStateFlow()
 
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
@@ -160,14 +171,33 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         }
     }
 
-    fun applyRateToMonth(rateMinor: Long) {
+    fun stageRateToMonth(rateMinor: Long) {
         val month = _selectedMonth.value
-        applyRate(month.atDay(1), month.atEndOfMonth(), rateMinor)
+        stageRate(month.atDay(1), month.atEndOfMonth(), rateMinor)
     }
 
-    fun applyRate(start: LocalDate, endInclusive: LocalDate?, rateMinor: Long) {
+    fun stageRate(start: LocalDate, endInclusive: LocalDate?, rateMinor: Long) {
         viewModelScope.launch {
-            runCatching { repository.applyRate(start, endInclusive, rateMinor) }
+            runCatching {
+                require(MoneyRules.isValid(rateMinor))
+                PendingRateChange(
+                    start = start,
+                    endInclusive = endInclusive,
+                    rateMinor = rateMinor,
+                    affectedExistingEntries = repository.countDays(start, endInclusive),
+                )
+            }.onSuccess { _pendingRateChange.value = it }
+                .onFailure { reportError(it.message ?: "Не удалось подготовить изменение ставки") }
+        }
+    }
+
+    fun cancelRateChange() { _pendingRateChange.value = null }
+
+    fun confirmRateChange() {
+        val pending = _pendingRateChange.value ?: return
+        viewModelScope.launch {
+            runCatching { repository.applyRate(pending.start, pending.endInclusive, pending.rateMinor) }
+                .onSuccess { _pendingRateChange.value = null }
                 .onFailure { reportError(it.message ?: "Не удалось изменить ставку") }
         }
     }
