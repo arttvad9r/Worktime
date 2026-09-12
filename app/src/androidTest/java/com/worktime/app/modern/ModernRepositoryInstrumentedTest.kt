@@ -1,10 +1,12 @@
 package com.worktime.app.modern
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.worktime.app.modern.backup.ModernBackupCodec
+import com.worktime.app.modern.data.MIGRATION_1_2
 import com.worktime.app.modern.data.ModernDatabase
 import com.worktime.app.modern.data.ModernRepository
 import com.worktime.app.modern.model.WorkDay
@@ -91,7 +93,17 @@ class ModernRepositoryInstrumentedTest {
     @Test
     fun backupRestoreRoundTripReplacesDatabaseAtomically() = runBlocking {
         val date = LocalDate.of(2026, 9, 12)
-        repository.saveDay(WorkDay(date, 510, 30_000, bonusMinor = 5_000, penaltyMinor = 1_000, note = "смена"))
+        repository.saveDay(
+            WorkDay(
+                date = date,
+                workedMinutes = 510,
+                hourlyRateMinor = 30_000,
+                bonusMinor = 5_000,
+                penaltyMinor = 1_000,
+                otherMinor = -750,
+                note = "смена",
+            ),
+        )
         val encoded = ModernBackupCodec.encode(repository.createBackup())
         val payload = ModernBackupCodec.decode(encoded)
 
@@ -104,6 +116,57 @@ class ModernRepositoryInstrumentedTest {
         assertEquals(30_000L, restored?.hourlyRateMinor)
         assertEquals(5_000L, restored?.bonusMinor)
         assertEquals(1_000L, restored?.penaltyMinor)
+        assertEquals(-750L, restored?.otherMinor)
         assertEquals("смена", restored?.note)
+    }
+
+    @Test
+    fun migrationFrom1To2PreservesShiftAndInitializesOtherToZero() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val databaseName = "modern-migration-1-2-test.db"
+        context.deleteDatabase(databaseName)
+        val databaseFile = context.getDatabasePath(databaseName)
+        databaseFile.parentFile?.mkdirs()
+        val date = LocalDate.of(2026, 8, 31)
+
+        SQLiteDatabase.openOrCreateDatabase(databaseFile, null).use { legacy ->
+            legacy.execSQL(
+                """CREATE TABLE IF NOT EXISTS `modern_work_days` (`epochDay` INTEGER NOT NULL, `workedMinutes` INTEGER NOT NULL, `hourlyRateMinor` INTEGER NOT NULL, `bonusMinor` INTEGER NOT NULL, `penaltyMinor` INTEGER NOT NULL, `note` TEXT NOT NULL, PRIMARY KEY(`epochDay`))""",
+            )
+            legacy.execSQL(
+                """CREATE TABLE IF NOT EXISTS `modern_rate_periods` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `startEpochDay` INTEGER NOT NULL, `endEpochDay` INTEGER, `hourlyRateMinor` INTEGER NOT NULL)""",
+            )
+            legacy.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_modern_rate_periods_startEpochDay` ON `modern_rate_periods` (`startEpochDay`)",
+            )
+            legacy.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_modern_rate_periods_endEpochDay` ON `modern_rate_periods` (`endEpochDay`)",
+            )
+            legacy.execSQL(
+                """CREATE TABLE IF NOT EXISTS `modern_settings` (`id` INTEGER NOT NULL, `defaultRateMinor` INTEGER NOT NULL, `currencyCode` TEXT NOT NULL, `themeMode` TEXT NOT NULL, PRIMARY KEY(`id`))""",
+            )
+            legacy.execSQL(
+                "INSERT INTO modern_work_days (epochDay, workedMinutes, hourlyRateMinor, bonusMinor, penaltyMinor, note) VALUES (?, ?, ?, ?, ?, ?)",
+                arrayOf(date.toEpochDay(), 480, 25_000, 1_000, 500, "до миграции"),
+            )
+            legacy.version = 1
+        }
+
+        val migrated = Room.databaseBuilder(context, ModernDatabase::class.java, databaseName)
+            .addMigrations(MIGRATION_1_2)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val restored = ModernRepository(migrated).getDay(date)
+            assertEquals(480, restored?.workedMinutes)
+            assertEquals(25_000L, restored?.hourlyRateMinor)
+            assertEquals(1_000L, restored?.bonusMinor)
+            assertEquals(500L, restored?.penaltyMinor)
+            assertEquals(0L, restored?.otherMinor)
+            assertEquals("до миграции", restored?.note)
+        } finally {
+            migrated.close()
+            context.deleteDatabase(databaseName)
+        }
     }
 }
