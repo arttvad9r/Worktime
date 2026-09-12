@@ -18,6 +18,7 @@ data class WorkDayEntity(
     val hourlyRateMinor: Long,
     val bonusMinor: Long,
     val penaltyMinor: Long,
+    val otherMinor: Long,
     val note: String,
 )
 
