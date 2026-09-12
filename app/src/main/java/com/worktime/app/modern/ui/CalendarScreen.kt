@@ -20,10 +20,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.FilledTonalButton
@@ -137,7 +137,7 @@ private fun MonthHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onPrevious) {
-            Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Предыдущий месяц")
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Предыдущий месяц")
         }
         Text(
             text = monthTitle(month),
@@ -147,7 +147,7 @@ private fun MonthHeader(
             fontWeight = FontWeight.SemiBold,
         )
         IconButton(onClick = onNext) {
-            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Следующий месяц")
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Следующий месяц")
         }
         IconButton(onClick = onToday) {
             Icon(Icons.Default.DateRange, contentDescription = "Текущий месяц")
@@ -188,10 +188,11 @@ private fun SixWeekCalendar(
             Row(modifier = Modifier.weight(1f)) {
                 repeat(7) { columnIndex ->
                     val date = dates[rowIndex * 7 + columnIndex]
+                    val inMonth = YearMonth.from(date) == month
                     DayCell(
                         date = date,
-                        inMonth = YearMonth.from(date) == month,
-                        entry = entries[date],
+                        inMonth = inMonth,
+                        entry = if (inMonth) entries[date] else null,
                         currencyCode = currencyCode,
                         modifier = Modifier
                             .weight(1f)
@@ -213,10 +214,10 @@ private fun DayCell(
     modifier: Modifier,
     onClick: () -> Unit,
 ) {
-    val today = date == LocalDate.now()
+    val today = inMonth && date == LocalDate.now()
     val container = when {
         today -> MaterialTheme.colorScheme.primaryContainer
-        entry != null && inMonth -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.62f)
+        entry != null -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.62f)
         else -> Color.Transparent
     }
     val content = when {
@@ -230,12 +231,12 @@ private fun DayCell(
         shape = RoundedCornerShape(14.dp),
         color = container,
         contentColor = content,
-        tonalElevation = if (entry != null && inMonth) 1.dp else 0.dp,
+        tonalElevation = if (entry != null) 1.dp else 0.dp,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .clickable(onClick = onClick)
+                .clickable(enabled = inMonth, onClick = onClick)
                 .padding(horizontal = 4.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
