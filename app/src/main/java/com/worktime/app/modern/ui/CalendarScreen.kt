@@ -41,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +58,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.TextStyle
-import java.util.Locale
 
 @Composable
 fun CalendarScreen(
@@ -170,7 +170,7 @@ private fun MonthHeader(
 
 @Composable
 private fun WeekdayHeader() {
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val weekdayLabels = remember(locale) {
         DayOfWeek.values().map { day -> day.getDisplayName(TextStyle.SHORT_STANDALONE, locale) }
     }
