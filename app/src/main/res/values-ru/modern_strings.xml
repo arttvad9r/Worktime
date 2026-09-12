@@ -37,6 +37,15 @@
     <string name="modern_import_preview">Записей: %1$d. Периодов ставок: %2$d. Текущие данные будут заменены.</string>
     <string name="modern_restore">Восстановить</string>
     <string name="modern_error">Ошибка</string>
+    <string name="modern_error_open_day">Не удалось открыть этот день.</string>
+    <string name="modern_error_save_day">Не удалось сохранить этот день. Редактор останется открытым.</string>
+    <string name="modern_error_delete_day">Не удалось удалить этот день.</string>
+    <string name="modern_error_save_setting">Не удалось сохранить настройку.</string>
+    <string name="modern_error_prepare_rate">Не удалось подготовить изменение ставки.</string>
+    <string name="modern_error_apply_rate">Не удалось применить изменение ставки.</string>
+    <string name="modern_error_create_backup">Не удалось создать резервную копию.</string>
+    <string name="modern_error_invalid_backup">Выбранный файл резервной копии повреждён или не поддерживается.</string>
+    <string name="modern_error_restore_backup">Не удалось восстановить резервную копию. Текущие данные не изменены.</string>
     <string name="modern_month_rate_title">Ставка за %1$s</string>
     <string name="modern_apply">Применить</string>
     <string name="modern_from_date">С даты, ДД.ММ.ГГГГ</string>
