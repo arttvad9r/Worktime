@@ -53,6 +53,12 @@ interface WorkDayDao {
     @Query("SELECT * FROM modern_work_days WHERE epochDay = :epochDay LIMIT 1")
     suspend fun get(epochDay: Long): WorkDayEntity?
 
+    @Query("SELECT COUNT(*) FROM modern_work_days WHERE epochDay BETWEEN :startEpochDay AND :endEpochDay")
+    suspend fun countInRange(startEpochDay: Long, endEpochDay: Long): Int
+
+    @Query("SELECT COUNT(*) FROM modern_work_days WHERE epochDay >= :startEpochDay")
+    suspend fun countFrom(startEpochDay: Long): Int
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(entity: WorkDayEntity)
 
