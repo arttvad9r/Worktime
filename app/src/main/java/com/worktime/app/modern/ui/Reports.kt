@@ -197,7 +197,7 @@ private fun SummaryCard(summary: PeriodSummary, currencyCode: String) {
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                "$shifts · ${formatMinutes(summary.workedMinutes)}",
+                "$shifts · ${formatDuration(summary.workedMinutes)}",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
@@ -231,7 +231,7 @@ private fun DayReportRow(day: WorkDay, currencyCode: String) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(dateText, fontWeight = FontWeight.SemiBold)
                 Text(
-                    formatMinutes(day.workedMinutes),
+                    formatDuration(day.workedMinutes),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
