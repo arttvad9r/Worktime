@@ -20,24 +20,37 @@ class ModernCalculationsTest {
     }
 
     @Test
-    fun `pay uses exact minutes and half up rounding`() {
+    fun `pay uses exact minutes half up rounding and signed other adjustment`() {
         val day = WorkDay(
             date = LocalDate.of(2026, 9, 12),
             workedMinutes = 90,
             hourlyRateMinor = 25_001,
             bonusMinor = 1_000,
             penaltyMinor = 500,
+            otherMinor = -250,
         )
         val pay = WorkTimeMath.payForDay(day)
         assertEquals(37_502, pay.baseMinor)
-        assertEquals(38_002, pay.totalMinor)
+        assertEquals(37_752, pay.totalMinor)
     }
 
     @Test
-    fun `summary counts only days with worked time as shifts`() {
+    fun `summary counts only worked days as shifts and includes signed other`() {
         val days = listOf(
-            WorkDay(LocalDate.of(2026, 9, 1), 480, 20_000, bonusMinor = 1_000),
-            WorkDay(LocalDate.of(2026, 9, 2), 0, 0, penaltyMinor = 500),
+            WorkDay(
+                LocalDate.of(2026, 9, 1),
+                480,
+                20_000,
+                bonusMinor = 1_000,
+                otherMinor = 250,
+            ),
+            WorkDay(
+                LocalDate.of(2026, 9, 2),
+                0,
+                0,
+                penaltyMinor = 500,
+                otherMinor = -100,
+            ),
         )
         val summary = WorkTimeMath.summarize(days)
         assertEquals(1, summary.shiftCount)
@@ -45,14 +58,20 @@ class ModernCalculationsTest {
         assertEquals(160_000, summary.baseMinor)
         assertEquals(1_000, summary.bonusMinor)
         assertEquals(500, summary.penaltyMinor)
-        assertEquals(160_500, summary.totalMinor)
+        assertEquals(150, summary.otherMinor)
+        assertEquals(160_650, summary.totalMinor)
     }
 
     @Test
-    fun `money boundary is shared by all modern calculations`() {
+    fun `money boundaries distinguish unsigned and signed adjustments`() {
         assertTrue(MoneyRules.isValid(0L))
         assertTrue(MoneyRules.isValid(MoneyRules.MAX_MINOR))
         assertFalse(MoneyRules.isValid(-1L))
         assertFalse(MoneyRules.isValid(MoneyRules.MAX_MINOR + 1L))
+
+        assertTrue(MoneyRules.isSignedAdjustmentValid(-MoneyRules.MAX_MINOR))
+        assertTrue(MoneyRules.isSignedAdjustmentValid(MoneyRules.MAX_MINOR))
+        assertFalse(MoneyRules.isSignedAdjustmentValid(-MoneyRules.MAX_MINOR - 1L))
+        assertFalse(MoneyRules.isSignedAdjustmentValid(MoneyRules.MAX_MINOR + 1L))
     }
 }
