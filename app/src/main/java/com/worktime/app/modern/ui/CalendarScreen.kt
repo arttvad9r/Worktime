@@ -18,15 +18,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronLeft
-import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Today
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -138,7 +137,7 @@ private fun MonthHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onPrevious) {
-            Icon(Icons.Default.ChevronLeft, contentDescription = "Предыдущий месяц")
+            Icon(Icons.Default.KeyboardArrowLeft, contentDescription = "Предыдущий месяц")
         }
         Text(
             text = monthTitle(month),
@@ -148,10 +147,10 @@ private fun MonthHeader(
             fontWeight = FontWeight.SemiBold,
         )
         IconButton(onClick = onNext) {
-            Icon(Icons.Default.ChevronRight, contentDescription = "Следующий месяц")
+            Icon(Icons.Default.KeyboardArrowRight, contentDescription = "Следующий месяц")
         }
         IconButton(onClick = onToday) {
-            Icon(Icons.Default.Today, contentDescription = "Текущий месяц")
+            Icon(Icons.Default.DateRange, contentDescription = "Текущий месяц")
         }
         IconButton(onClick = onSettings) {
             Icon(Icons.Default.Settings, contentDescription = "Настройки")
@@ -303,7 +302,7 @@ private fun MonthSummaryPanel(
                     )
                 }
                 Icon(
-                    if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
                     contentDescription = if (expanded) "Свернуть" else "Развернуть",
                 )
             }
