@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,7 +42,6 @@ import com.worktime.app.modern.model.WorkDay
 import com.worktime.app.modern.model.WorkTimeMath
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,7 +64,7 @@ fun DayEditorSheet(
     var other by remember(state.date, state.otherMinor) { mutableStateOf(moneyInput(state.otherMinor)) }
     var note by remember(state.date, state.note) { mutableStateOf(state.note) }
     val haptics = LocalHapticFeedback.current
-    val locale = Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0]
     val dateText = remember(state.date, locale) {
         state.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
     }
