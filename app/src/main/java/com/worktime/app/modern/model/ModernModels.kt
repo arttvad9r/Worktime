@@ -5,6 +5,12 @@ import java.time.YearMonth
 
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
+object MoneyRules {
+    const val MAX_MINOR: Long = 100_000_000_000L
+
+    fun isValid(value: Long): Boolean = value in 0..MAX_MINOR
+}
+
 data class AppSettings(
     val defaultRateMinor: Long = 0L,
     val currencyCode: String = "RUB",
@@ -42,9 +48,9 @@ data class MonthTotal(
 object WorkTimeMath {
     fun payForDay(day: WorkDay): DayPay {
         require(day.workedMinutes in 0..24 * 60)
-        require(day.hourlyRateMinor >= 0L)
-        require(day.bonusMinor >= 0L)
-        require(day.penaltyMinor >= 0L)
+        require(MoneyRules.isValid(day.hourlyRateMinor))
+        require(MoneyRules.isValid(day.bonusMinor))
+        require(MoneyRules.isValid(day.penaltyMinor))
         val base = divideRoundedHalfUp(
             Math.multiplyExact(day.hourlyRateMinor, day.workedMinutes.toLong()),
             60L,
