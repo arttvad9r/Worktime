@@ -32,16 +32,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.worktime.app.R
 import com.worktime.app.modern.ModernViewModel
 import com.worktime.app.modern.model.MonthTotal
 import com.worktime.app.modern.model.PeriodSummary
 import com.worktime.app.modern.model.WorkDay
 import com.worktime.app.modern.model.WorkTimeMath
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun MonthReportScreen(
@@ -64,12 +71,16 @@ fun MonthReportScreen(
             item { SummaryCard(summary, settings.currencyCode) }
             item {
                 Button(onClick = onOpenYear, modifier = Modifier.fillMaxWidth()) {
-                    Text("Годовой отчёт")
+                    Text(stringResource(R.string.modern_year_report))
                 }
             }
             if (days.isNotEmpty()) {
                 item {
-                    Text("Смены", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        stringResource(R.string.modern_shifts),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold,
+                    )
                 }
                 items(days.sortedByDescending(WorkDay::date), key = { it.date.toEpochDay() }) { day ->
                     DayReportRow(day = day, currencyCode = settings.currencyCode)
@@ -100,10 +111,13 @@ fun YearReportScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
             }
             IconButton(onClick = viewModel::previousYear) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Предыдущий год")
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = stringResource(R.string.previous_year),
+                )
             }
             Text(
                 text = year.toString(),
@@ -113,7 +127,10 @@ fun YearReportScreen(
                 fontWeight = FontWeight.SemiBold,
             )
             IconButton(onClick = viewModel::nextYear) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Следующий год")
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = stringResource(R.string.next_year),
+                )
             }
             Spacer(Modifier.width(48.dp))
         }
@@ -126,7 +143,7 @@ fun YearReportScreen(
             item { SummaryCard(summary, settings.currencyCode) }
             item {
                 Text(
-                    "Доход по месяцам",
+                    stringResource(R.string.modern_income_by_month),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 4.dp),
@@ -153,7 +170,7 @@ private fun ReportTopBar(title: String, onBack: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
         }
         Text(
             text = title,
@@ -168,6 +185,7 @@ private fun ReportTopBar(title: String, onBack: () -> Unit) {
 
 @Composable
 private fun SummaryCard(summary: PeriodSummary, currencyCode: String) {
+    val shifts = pluralStringResource(R.plurals.shifts_short, summary.shiftCount, summary.shiftCount)
     Surface(
         shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
@@ -179,16 +197,16 @@ private fun SummaryCard(summary: PeriodSummary, currencyCode: String) {
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                "${summary.shiftCount} смен · ${formatMinutes(summary.workedMinutes)}",
+                "$shifts · ${formatMinutes(summary.workedMinutes)}",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(Modifier.height(12.dp))
             HorizontalDivider()
             Spacer(Modifier.height(8.dp))
-            SummaryRow("По сменам", formatMoney(summary.baseMinor, currencyCode))
-            SummaryRow("Премии", formatMoney(summary.bonusMinor, currencyCode))
-            SummaryRow("Штрафы", "−${formatMoney(summary.penaltyMinor, currencyCode)}")
-            SummaryRow("Прочее", formatMoney(summary.otherMinor, currencyCode))
+            SummaryRow(stringResource(R.string.modern_base_earnings), formatMoney(summary.baseMinor, currencyCode))
+            SummaryRow(stringResource(R.string.modern_bonuses), formatMoney(summary.bonusMinor, currencyCode))
+            SummaryRow(stringResource(R.string.modern_penalties), "−${formatMoney(summary.penaltyMinor, currencyCode)}")
+            SummaryRow(stringResource(R.string.modern_other), formatMoney(summary.otherMinor, currencyCode))
         }
     }
 }
@@ -196,6 +214,10 @@ private fun SummaryCard(summary: PeriodSummary, currencyCode: String) {
 @Composable
 private fun DayReportRow(day: WorkDay, currencyCode: String) {
     val pay = remember(day) { WorkTimeMath.payForDay(day) }
+    val locale = Locale.getDefault()
+    val dateText = remember(day.date, locale) {
+        day.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(locale))
+    }
     Surface(
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
@@ -207,10 +229,7 @@ private fun DayReportRow(day: WorkDay, currencyCode: String) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    "%02d.%02d".format(day.date.dayOfMonth, day.date.monthValue),
-                    fontWeight = FontWeight.SemiBold,
-                )
+                Text(dateText, fontWeight = FontWeight.SemiBold)
                 Text(
                     formatMinutes(day.workedMinutes),
                     style = MaterialTheme.typography.bodySmall,
@@ -230,6 +249,11 @@ private fun MonthIncomeRow(
     onClick: () -> Unit,
 ) {
     val fraction = (month.summary.totalMinor.coerceAtLeast(0L).toDouble() / maxIncome.toDouble()).toFloat()
+    val locale = Locale.getDefault()
+    val monthName = remember(month.month, locale) {
+        month.month.month.getDisplayName(TextStyle.FULL_STANDALONE, locale)
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
+    }
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -240,10 +264,7 @@ private fun MonthIncomeRow(
         Column(modifier = Modifier.padding(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    month.month.month.getDisplayName(
-                        java.time.format.TextStyle.FULL_STANDALONE,
-                        java.util.Locale.forLanguageTag("ru-RU"),
-                    ).replaceFirstChar { it.titlecase() },
+                    monthName,
                     modifier = Modifier.weight(1f),
                     fontWeight = FontWeight.Medium,
                 )
