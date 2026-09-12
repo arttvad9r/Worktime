@@ -53,21 +53,12 @@ android {
 
     buildTypes {
         getByName("debug") {
-            // Keep development/instrumentation installs isolated from the real app package.
-            // connectedDebugAndroidTest may uninstall its tested APK during cleanup, so a
-            // dedicated application id prevents a physical QA run from deleting user data.
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
 
         release {
-            // Production signing is opt-in through RELEASE_* properties/env vars.
-            // Without them Gradle produces an unsigned release artifact, never a
-            // misleading debug-signed production build.
             signingConfig = signingConfigs.findByName("production")
-
-            // AGP 9.3 optimization DSL enables R8 code optimization and optimized
-            // resource shrinking together for the release variant.
             optimization {
                 enable = true
             }
@@ -75,9 +66,6 @@ android {
         }
 
         create("nonMinifiedRelease") {
-            // Baseline Profile capture must preserve source-level class and method names.
-            // With AGP 9.x, disable the new optimization DSL explicitly in addition to
-            // the Baseline Profile plugin's non-minified variant overrides.
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             optimization {
@@ -87,9 +75,6 @@ android {
         }
 
         create("benchmark") {
-            // Macrobenchmark must measure release-like code without touching the installed
-            // production package on a physical QA device. The benchmark application id is
-            // disposable and independently debug-signed.
             initWith(getByName("release"))
             applicationIdSuffix = ".benchmark"
             versionNameSuffix = "-benchmark"
@@ -149,6 +134,7 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.profileinstaller)
 
