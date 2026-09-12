@@ -115,35 +115,37 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
                     ),
                 )
             }.onSuccess { _editor.value = null }
-                .onFailure { _lastError.value = it.message ?: "Не удалось сохранить день" }
+                .onFailure { reportError(it.message ?: "Не удалось сохранить день") }
         }
     }
 
     fun deleteCurrentDay() {
         val current = _editor.value ?: return
         viewModelScope.launch {
-            repository.deleteDay(current.date)
-            _editor.value = null
+            runCatching { repository.deleteDay(current.date) }
+                .onSuccess { _editor.value = null }
+                .onFailure { reportError(it.message ?: "Не удалось удалить день") }
         }
     }
 
     fun setDefaultRate(rateMinor: Long) {
         viewModelScope.launch {
             runCatching { repository.updateSettings { it.copy(defaultRateMinor = rateMinor) } }
-                .onFailure { _lastError.value = it.message }
+                .onFailure { reportError(it.message ?: "Не удалось сохранить ставку") }
         }
     }
 
     fun setCurrency(code: String) {
         viewModelScope.launch {
             runCatching { repository.updateSettings { it.copy(currencyCode = code) } }
-                .onFailure { _lastError.value = it.message }
+                .onFailure { reportError(it.message ?: "Не удалось изменить валюту") }
         }
     }
 
     fun setTheme(mode: ThemeMode) {
         viewModelScope.launch {
-            repository.updateSettings { it.copy(themeMode = mode) }
+            runCatching { repository.updateSettings { it.copy(themeMode = mode) } }
+                .onFailure { reportError(it.message ?: "Не удалось изменить тему") }
         }
     }
 
@@ -155,7 +157,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
     fun applyRate(start: LocalDate, endInclusive: LocalDate?, rateMinor: Long) {
         viewModelScope.launch {
             runCatching { repository.applyRate(start, endInclusive, rateMinor) }
-                .onFailure { _lastError.value = it.message ?: "Не удалось изменить ставку" }
+                .onFailure { reportError(it.message ?: "Не удалось изменить ставку") }
         }
     }
 
@@ -163,7 +165,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         viewModelScope.launch {
             runCatching { ModernBackupCodec.encode(repository.createBackup()) }
                 .onSuccess(onReady)
-                .onFailure { _lastError.value = it.message ?: "Не удалось создать резервную копию" }
+                .onFailure { reportError(it.message ?: "Не удалось создать резервную копию") }
         }
     }
 
@@ -172,7 +174,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
             .onSuccess { payload ->
                 _pendingImport.value = ImportState(payload, ModernBackupCodec.preview(payload))
             }
-            .onFailure { _lastError.value = it.message ?: "Некорректный файл резервной копии" }
+            .onFailure { reportError(it.message ?: "Некорректный файл резервной копии") }
     }
 
     fun cancelImport() { _pendingImport.value = null }
@@ -182,10 +184,11 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         viewModelScope.launch {
             runCatching { repository.restoreBackup(staged.payload) }
                 .onSuccess { _pendingImport.value = null }
-                .onFailure { _lastError.value = it.message ?: "Не удалось восстановить данные" }
+                .onFailure { reportError(it.message ?: "Не удалось восстановить данные") }
         }
     }
 
+    fun reportError(message: String) { _lastError.value = message }
     fun consumeError() { _lastError.value = null }
 
     class Factory(private val repository: ModernRepository) : ViewModelProvider.Factory {
