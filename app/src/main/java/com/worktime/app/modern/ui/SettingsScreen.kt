@@ -33,10 +33,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.worktime.app.R
 import com.worktime.app.modern.ModernViewModel
 import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
@@ -63,6 +65,10 @@ fun SettingsScreen(
     var showRangeRate by remember { mutableStateOf(false) }
     var exportText by remember { mutableStateOf<String?>(null) }
     val parsedDefaultRate = parseMoneyMinor(defaultRateInput)
+    val fileOpenFailed = stringResource(R.string.modern_file_open_failed)
+    val backupSaveFailed = stringResource(R.string.modern_backup_save_failed)
+    val fileReadFailed = stringResource(R.string.modern_file_read_failed)
+    val backupReadFailed = stringResource(R.string.modern_backup_read_failed)
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -71,8 +77,8 @@ fun SettingsScreen(
         if (uri != null && text != null) {
             runCatching {
                 context.contentResolver.openOutputStream(uri)?.bufferedWriter()?.use { it.write(text) }
-                    ?: kotlin.error("Не удалось открыть файл")
-            }.onFailure { viewModel.reportError(it.message ?: "Не удалось сохранить резервную копию") }
+                    ?: kotlin.error(fileOpenFailed)
+            }.onFailure { viewModel.reportError(it.message ?: backupSaveFailed) }
         }
         exportText = null
     }
@@ -80,9 +86,9 @@ fun SettingsScreen(
         if (uri != null) {
             runCatching {
                 context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
-                    ?: kotlin.error("Не удалось прочитать файл")
+                    ?: kotlin.error(fileReadFailed)
             }.onSuccess(viewModel::stageImport)
-                .onFailure { viewModel.reportError(it.message ?: "Не удалось прочитать резервную копию") }
+                .onFailure { viewModel.reportError(it.message ?: backupReadFailed) }
         }
     }
 
@@ -94,10 +100,10 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back))
             }
             Text(
-                "Настройки",
+                stringResource(R.string.settings),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
@@ -109,7 +115,7 @@ fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             item {
-                SettingsSection("Ставка") {
+                SettingsSection(stringResource(R.string.modern_rate_section)) {
                     OutlinedTextField(
                         value = defaultRateInput,
                         onValueChange = { next ->
@@ -117,7 +123,7 @@ fun SettingsScreen(
                                 defaultRateInput = next
                             }
                         },
-                        label = { Text("Стандартная ставка / час") },
+                        label = { Text(stringResource(R.string.modern_default_rate_per_hour)) },
                         suffix = { Text(settings.currencyCode) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
@@ -132,18 +138,18 @@ fun SettingsScreen(
                         },
                         enabled = parsedDefaultRate != null && MoneyRules.isValid(parsedDefaultRate),
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Сохранить стандартную ставку") }
+                    ) { Text(stringResource(R.string.modern_save_default_rate)) }
                     OutlinedButton(onClick = { showMonthRate = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Изменить ставку за ${monthTitle(currentMonth)}")
+                        Text(stringResource(R.string.modern_change_rate_month, monthTitle(currentMonth)))
                     }
                     OutlinedButton(onClick = { showRangeRate = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Изменить ставку за период")
+                        Text(stringResource(R.string.change_rate_for_period))
                     }
                 }
             }
 
             item {
-                SettingsSection("Валюта") {
+                SettingsSection(stringResource(R.string.modern_currency)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         listOf("RUB", "USD", "EUR").forEach { code ->
                             FilterChip(
@@ -157,13 +163,13 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection("Тема") {
+                SettingsSection(stringResource(R.string.modern_theme)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ThemeMode.entries.forEach { mode ->
                             val label = when (mode) {
-                                ThemeMode.SYSTEM -> "Система"
-                                ThemeMode.LIGHT -> "Светлая"
-                                ThemeMode.DARK -> "Тёмная"
+                                ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                                ThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                                ThemeMode.DARK -> stringResource(R.string.theme_dark)
                             }
                             FilterChip(
                                 selected = settings.themeMode == mode,
@@ -176,7 +182,7 @@ fun SettingsScreen(
             }
 
             item {
-                SettingsSection("Данные") {
+                SettingsSection(stringResource(R.string.modern_data)) {
                     Button(
                         onClick = {
                             viewModel.exportBackup { payload ->
@@ -185,13 +191,13 @@ fun SettingsScreen(
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Экспортировать резервную копию") }
+                    ) { Text(stringResource(R.string.modern_export_backup)) }
                     OutlinedButton(
                         onClick = { importLauncher.launch(arrayOf("application/json", "text/plain")) },
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Импортировать резервную копию") }
+                    ) { Text(stringResource(R.string.modern_import_backup)) }
                     Text(
-                        "Восстановление заменяет текущие данные только после проверки файла и подтверждения.",
+                        stringResource(R.string.modern_restore_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -224,23 +230,30 @@ fun SettingsScreen(
     pendingImport?.let { staged ->
         AlertDialog(
             onDismissRequest = viewModel::cancelImport,
-            title = { Text("Восстановить данные?") },
+            title = { Text(stringResource(R.string.modern_restore_title)) },
             text = {
                 Text(
-                    "Записей: ${staged.preview.workDayCount}. Периодов ставок: ${staged.preview.ratePeriodCount}. " +
-                        "Текущие данные будут заменены.",
+                    stringResource(
+                        R.string.modern_import_preview,
+                        staged.preview.workDayCount,
+                        staged.preview.ratePeriodCount,
+                    ),
                 )
             },
-            confirmButton = { TextButton(onClick = viewModel::confirmImport) { Text("Восстановить") } },
-            dismissButton = { TextButton(onClick = viewModel::cancelImport) { Text("Отмена") } },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmImport) { Text(stringResource(R.string.modern_restore)) }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::cancelImport) { Text(stringResource(R.string.cancel)) }
+            },
         )
     }
     lastError?.let { message ->
         AlertDialog(
             onDismissRequest = viewModel::consumeError,
-            title = { Text("Ошибка") },
+            title = { Text(stringResource(R.string.modern_error)) },
             text = { Text(message) },
-            confirmButton = { TextButton(onClick = viewModel::consumeError) { Text("OK") } },
+            confirmButton = { TextButton(onClick = viewModel::consumeError) { Text(stringResource(R.string.ok)) } },
         )
     }
 }
@@ -267,12 +280,12 @@ private fun MonthRateDialog(
     val valid = parsed != null && MoneyRules.isValid(parsed)
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ставка за ${monthTitle(month)}") },
+        title = { Text(stringResource(R.string.modern_month_rate_title, monthTitle(month))) },
         text = {
             OutlinedTextField(
                 value = value,
                 onValueChange = { value = it },
-                label = { Text("Ставка / час") },
+                label = { Text(stringResource(R.string.modern_rate_per_hour)) },
                 suffix = { Text(currencyCode) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
@@ -283,9 +296,9 @@ private fun MonthRateDialog(
             TextButton(
                 onClick = { parsed?.takeIf(MoneyRules::isValid)?.let(onApply) },
                 enabled = valid,
-            ) { Text("Применить") }
+            ) { Text(stringResource(R.string.modern_apply)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
 
@@ -307,34 +320,34 @@ private fun RangeRateDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Ставка за период") },
+        title = { Text(stringResource(R.string.rate_for_period)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = startText,
                     onValueChange = { startText = it },
-                    label = { Text("С даты, ДД.ММ.ГГГГ") },
+                    label = { Text(stringResource(R.string.modern_from_date)) },
                     singleLine = true,
                     isError = start == null,
                 )
                 OutlinedTextField(
                     value = endText,
                     onValueChange = { endText = it },
-                    label = { Text("По дату (пусто = бессрочно)") },
+                    label = { Text(stringResource(R.string.modern_to_date_open_ended)) },
                     singleLine = true,
                     isError = !endValid,
                 )
                 OutlinedTextField(
                     value = rateText,
                     onValueChange = { rateText = it },
-                    label = { Text("Ставка / час") },
+                    label = { Text(stringResource(R.string.modern_rate_per_hour)) },
                     suffix = { Text(currencyCode) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
                     isError = rateText.isNotBlank() && !rateValid,
                 )
                 Text(
-                    "Существующие записи в диапазоне будут явно пересчитаны на новую ставку. Новые записи получат её автоматически.",
+                    stringResource(R.string.modern_rate_range_explainer),
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
@@ -347,8 +360,8 @@ private fun RangeRateDialog(
                     onApply(validStart, end, validRate)
                 },
                 enabled = valid,
-            ) { Text("Применить") }
+            ) { Text(stringResource(R.string.modern_apply)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
 }
