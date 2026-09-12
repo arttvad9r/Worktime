@@ -58,6 +58,7 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val pendingImport by viewModel.pendingImport.collectAsStateWithLifecycle()
+    val pendingRateChange by viewModel.pendingRateChange.collectAsStateWithLifecycle()
     val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var defaultRateInput by remember(settings.defaultRateMinor) { mutableStateOf(moneyInput(settings.defaultRateMinor)) }
@@ -212,7 +213,7 @@ fun SettingsScreen(
             currencyCode = settings.currencyCode,
             onDismiss = { showMonthRate = false },
             onApply = { rate ->
-                viewModel.applyRateToMonth(rate)
+                viewModel.stageRateToMonth(rate)
                 showMonthRate = false
             },
         )
@@ -222,8 +223,49 @@ fun SettingsScreen(
             currencyCode = settings.currencyCode,
             onDismiss = { showRangeRate = false },
             onApply = { start, end, rate ->
-                viewModel.applyRate(start, end, rate)
+                viewModel.stageRate(start, end, rate)
                 showRangeRate = false
+            },
+        )
+    }
+    pendingRateChange?.let { staged ->
+        AlertDialog(
+            onDismissRequest = viewModel::cancelRateChange,
+            title = { Text(stringResource(R.string.modern_rate_confirm_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val startText = staged.start.format(dateFormatter)
+                    val endText = staged.endInclusive?.format(dateFormatter)
+                    Text(
+                        if (endText == null) {
+                            stringResource(R.string.modern_rate_confirm_open_period, startText)
+                        } else {
+                            stringResource(R.string.modern_rate_confirm_period, startText, endText)
+                        },
+                    )
+                    Text(
+                        stringResource(
+                            R.string.modern_rate_confirm_value,
+                            formatMoney(staged.rateMinor, settings.currencyCode),
+                        ),
+                    )
+                    Text(
+                        stringResource(
+                            R.string.modern_rate_confirm_affected,
+                            staged.affectedExistingEntries,
+                        ),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmRateChange) {
+                    Text(stringResource(R.string.modern_apply))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::cancelRateChange) {
+                    Text(stringResource(R.string.cancel))
+                }
             },
         )
     }
