@@ -26,6 +26,9 @@
     <string name="modern_note">Note</string>
     <string name="modern_delete">Delete</string>
     <string name="modern_save">Save</string>
+    <string name="modern_today_date">Today, %1$s</string>
+    <string name="modern_day_a11y_empty">%1$s. No work entry.</string>
+    <string name="modern_day_a11y_entry">%1$s. Worked %2$s. Earnings %3$s.</string>
 
     <string name="modern_rate_section">Rate</string>
     <string name="modern_default_rate_per_hour">Default rate / hour</string>
