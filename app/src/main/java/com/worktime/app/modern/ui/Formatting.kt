@@ -11,6 +11,8 @@ import java.time.format.TextStyle
 import java.util.Currency
 import java.util.Locale
 
+private val plainMoneyPattern = Regex("^-?(?:\\d+(?:[.,]\\d*)?|[.,]\\d+)$")
+
 @Composable
 fun formatDuration(minutes: Int): String {
     require(minutes >= 0)
@@ -35,8 +37,10 @@ fun formatMoney(minor: Long, currencyCode: String, locale: Locale = Locale.getDe
 fun moneyInput(minor: Long): String = BigDecimal.valueOf(minor, 2).stripTrailingZeros().toPlainString()
 
 fun parseMoneyMinor(value: String): Long? = runCatching {
-    val normalized = value.trim().replace(',', '.')
-    if (normalized.isEmpty()) return@runCatching 0L
+    val trimmed = value.trim()
+    if (trimmed.isEmpty()) return@runCatching 0L
+    require(plainMoneyPattern.matches(trimmed))
+    val normalized = trimmed.replace(',', '.')
     BigDecimal(normalized)
         .setScale(2, RoundingMode.HALF_UP)
         .movePointRight(2)

@@ -128,13 +128,16 @@ for path in legacy_paths:
         fail(f"Legacy runtime/test artifact still active: {path.relative_to(ROOT)}")
 
 main_activity_text = read(APP / "src/main/java/com/worktime/app/MainActivity.kt")
-if '"worktime-modern.db"' not in main_activity_text:
-    fail("Rewrite must use an isolated Room database file")
+if "ModernAppGraph.get(applicationContext)" not in main_activity_text:
+    fail("MainActivity must use the process-scoped modern app graph")
+if "Room.databaseBuilder" in main_activity_text:
+    fail("MainActivity must not own a recreation-scoped Room database")
 if "WorkTimeApplication" in main_activity_text or "com.worktime.app.ui.WorkTimeApp" in main_activity_text:
     fail("MainActivity still references legacy runtime")
 
 modern_root = APP / "src/main/java/com/worktime/app/modern"
 required_files = (
+    modern_root / "ModernAppGraph.kt",
     modern_root / "model/ModernModels.kt",
     modern_root / "data/ModernDatabase.kt",
     modern_root / "data/ModernRepository.kt",
@@ -149,6 +152,11 @@ required_files = (
 for path in required_files:
     if not path.is_file():
         fail(f"Rewrite source/schema missing: {path.relative_to(ROOT)}")
+
+app_graph = read(modern_root / "ModernAppGraph.kt")
+for expected in ("context.applicationContext", '"worktime-modern.db"', "Room.databaseBuilder"):
+    if expected not in app_graph:
+        fail(f"ModernAppGraph invariant missing: {expected}")
 
 for kotlin_file in modern_root.rglob("*.kt"):
     text = read(kotlin_file)

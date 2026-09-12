@@ -6,16 +6,17 @@ WorkTime is a single Android application module with a deliberately small depend
 
 ```text
 MainActivity
-  ├─ Room ModernDatabase (worktime-modern.db)
-  ├─ ModernRepository
-  └─ ModernViewModel
+  → ModernAppGraph (process-scoped, applicationContext)
+       ├─ Room ModernDatabase (worktime-modern.db)
+       └─ ModernRepository
+  → ModernViewModel
        ↓ StateFlow / explicit actions
      ModernWorkTimeApp
        ↓ Navigation 3
      Calendar / Month report / Year report / Settings
 ```
 
-`MainActivity` is the composition root. It constructs the Room database and repository and supplies `ModernViewModel.Factory`. There is no custom `Application`, service locator, Hilt/Koin container, generic repository framework or event bus.
+`ModernAppGraph` owns the process-lifetime Room database and repository so Activity recreation/resizing cannot create a new persistence graph underneath a surviving ViewModel. `MainActivity` remains the UI composition root and obtains the graph with `applicationContext`. There is no custom `Application`, Hilt/Koin container, generic repository framework or event bus.
 
 ## State
 
@@ -90,7 +91,7 @@ Stores default hourly rate, ISO currency code and theme mode. Settings live in R
 - totals: checked integer arithmetic;
 - business/data layers reject `Float` and `Double` through static audit.
 
-Floating point is permitted only for presentation-only geometry such as the relative bar width in the yearly report.
+Floating point is permitted only for presentation-only geometry such as the relative bar width in the yearly report. Monetary text parsing accepts plain decimal notation with comma or dot and deliberately rejects exponent notation.
 
 ## Backup and restore
 
