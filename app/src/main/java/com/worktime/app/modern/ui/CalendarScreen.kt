@@ -41,19 +41,23 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.worktime.app.R
 import com.worktime.app.modern.ModernViewModel
 import com.worktime.app.modern.model.PeriodSummary
 import com.worktime.app.modern.model.WorkDay
 import com.worktime.app.modern.model.WorkTimeMath
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-
-private val weekdayLabels = listOf("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
+import java.time.format.TextStyle
+import java.util.Locale
 
 @Composable
 fun CalendarScreen(
@@ -137,7 +141,10 @@ private fun MonthHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         IconButton(onClick = onPrevious) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "Предыдущий месяц")
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.previous_month),
+            )
         }
         Text(
             text = monthTitle(month),
@@ -147,19 +154,26 @@ private fun MonthHeader(
             fontWeight = FontWeight.SemiBold,
         )
         IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Следующий месяц")
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.next_month),
+            )
         }
         IconButton(onClick = onToday) {
-            Icon(Icons.Default.DateRange, contentDescription = "Текущий месяц")
+            Icon(Icons.Default.DateRange, contentDescription = stringResource(R.string.current_month))
         }
         IconButton(onClick = onSettings) {
-            Icon(Icons.Default.Settings, contentDescription = "Настройки")
+            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.settings))
         }
     }
 }
 
 @Composable
 private fun WeekdayHeader() {
+    val locale = Locale.getDefault()
+    val weekdayLabels = remember(locale) {
+        DayOfWeek.values().map { day -> day.getDisplayName(TextStyle.SHORT_STANDALONE, locale) }
+    }
     Row(modifier = Modifier.fillMaxWidth()) {
         weekdayLabels.forEachIndexed { index, label ->
             Text(
@@ -276,6 +290,7 @@ private fun MonthSummaryPanel(
     onOpenReport: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val shifts = pluralStringResource(R.plurals.shifts_short, summary.shiftCount, summary.shiftCount)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -292,7 +307,7 @@ private fun MonthSummaryPanel(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "${summary.shiftCount} смен · ${formatMinutes(summary.workedMinutes)}",
+                        text = "$shifts · ${formatMinutes(summary.workedMinutes)}",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -304,7 +319,9 @@ private fun MonthSummaryPanel(
                 }
                 Icon(
                     if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                    contentDescription = if (expanded) "Свернуть" else "Развернуть",
+                    contentDescription = stringResource(
+                        if (expanded) R.string.modern_collapse else R.string.modern_expand,
+                    ),
                 )
             }
             AnimatedVisibility(visible = expanded) {
@@ -312,15 +329,15 @@ private fun MonthSummaryPanel(
                     Spacer(Modifier.height(10.dp))
                     HorizontalDivider()
                     Spacer(Modifier.height(10.dp))
-                    SummaryRow("По сменам", formatMoney(summary.baseMinor, currencyCode))
-                    SummaryRow("Премии", formatMoney(summary.bonusMinor, currencyCode))
-                    SummaryRow("Штрафы", "−${formatMoney(summary.penaltyMinor, currencyCode)}")
-                    SummaryRow("Прочее", formatMoney(summary.otherMinor, currencyCode))
+                    SummaryRow(stringResource(R.string.modern_base_earnings), formatMoney(summary.baseMinor, currencyCode))
+                    SummaryRow(stringResource(R.string.modern_bonuses), formatMoney(summary.bonusMinor, currencyCode))
+                    SummaryRow(stringResource(R.string.modern_penalties), "−${formatMoney(summary.penaltyMinor, currencyCode)}")
+                    SummaryRow(stringResource(R.string.modern_other), formatMoney(summary.otherMinor, currencyCode))
                     Spacer(Modifier.height(6.dp))
                     FilledTonalButton(
                         onClick = onOpenReport,
                         modifier = Modifier.fillMaxWidth(),
-                    ) { Text("Месячный отчёт") }
+                    ) { Text(stringResource(R.string.modern_month_report)) }
                 }
             }
         }
