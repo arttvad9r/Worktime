@@ -44,7 +44,7 @@ fun DayEditorSheet(
     state: ModernViewModel.DayEditorState,
     currencyCode: String,
     onDismiss: () -> Unit,
-    onSave: (Int, Long, Long, Long, String) -> Unit,
+    onSave: (Int, Long, Long, Long, Long, String) -> Unit,
     onDelete: () -> Unit,
 ) {
     var hours by remember(state.date, state.workedMinutes) {
@@ -56,6 +56,7 @@ fun DayEditorSheet(
     var rate by remember(state.date, state.rateMinor) { mutableStateOf(moneyInput(state.rateMinor)) }
     var bonus by remember(state.date, state.bonusMinor) { mutableStateOf(moneyInput(state.bonusMinor)) }
     var penalty by remember(state.date, state.penaltyMinor) { mutableStateOf(moneyInput(state.penaltyMinor)) }
+    var other by remember(state.date, state.otherMinor) { mutableStateOf(moneyInput(state.otherMinor)) }
     var note by remember(state.date, state.note) { mutableStateOf(state.note) }
     val haptics = LocalHapticFeedback.current
 
@@ -64,15 +65,18 @@ fun DayEditorSheet(
     val rateValue = parseMoneyMinor(rate)
     val bonusValue = parseMoneyMinor(bonus)
     val penaltyValue = parseMoneyMinor(penalty)
+    val otherValue = parseMoneyMinor(other)
     val safeRate = rateValue ?: 0L
     val safeBonus = bonusValue ?: 0L
     val safePenalty = penaltyValue ?: 0L
+    val safeOther = otherValue ?: 0L
     val workedMinutes = if (hourValue != null && minuteValue != null) hourValue * 60 + minuteValue else -1
     val valid = hourValue != null && hourValue in 0..24 &&
         minuteValue != null && minuteValue in 0..59 && workedMinutes in 0..1440 &&
         rateValue != null && MoneyRules.isValid(rateValue) &&
         bonusValue != null && MoneyRules.isValid(bonusValue) &&
-        penaltyValue != null && MoneyRules.isValid(penaltyValue)
+        penaltyValue != null && MoneyRules.isValid(penaltyValue) &&
+        otherValue != null && MoneyRules.isSignedAdjustmentValid(otherValue)
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
@@ -128,6 +132,13 @@ fun DayEditorSheet(
                 MoneyField("Премия", bonus, { bonus = it }, currencyCode, Modifier.weight(1f))
                 MoneyField("Штраф", penalty, { penalty = it }, currencyCode, Modifier.weight(1f))
             }
+            MoneyField(
+                label = "Прочее (+/−)",
+                value = other,
+                onValueChange = { other = it },
+                currencyCode = currencyCode,
+                allowNegative = true,
+            )
             OutlinedTextField(
                 value = note,
                 onValueChange = { if (it.length <= 500) note = it },
@@ -144,6 +155,7 @@ fun DayEditorSheet(
                     hourlyRateMinor = safeRate,
                     bonusMinor = safeBonus,
                     penaltyMinor = safePenalty,
+                    otherMinor = safeOther,
                 )
                 val pay = WorkTimeMath.payForDay(preview)
                 Spacer(Modifier.height(10.dp))
@@ -177,7 +189,7 @@ fun DayEditorSheet(
                     }
                 }
                 Button(
-                    onClick = { onSave(workedMinutes, safeRate, safeBonus, safePenalty, note) },
+                    onClick = { onSave(workedMinutes, safeRate, safeBonus, safePenalty, safeOther, note) },
                     enabled = valid,
                     modifier = Modifier.weight(1f),
                 ) { Text("Сохранить") }
@@ -193,18 +205,26 @@ private fun MoneyField(
     onValueChange: (String) -> Unit,
     currencyCode: String,
     modifier: Modifier = Modifier.fillMaxWidth(),
+    allowNegative: Boolean = false,
 ) {
     val parsed = parseMoneyMinor(value)
+    val valid = parsed != null && if (allowNegative) {
+        MoneyRules.isSignedAdjustmentValid(parsed)
+    } else {
+        MoneyRules.isValid(parsed)
+    }
     OutlinedTextField(
         value = value,
         onValueChange = { next ->
-            if (next.length <= 14 && next.all { it.isDigit() || it == ',' || it == '.' }) onValueChange(next)
+            val charactersValid = next.all { it.isDigit() || it == ',' || it == '.' || (allowNegative && it == '-') }
+            val signValid = !allowNegative || '-' !in next.drop(1)
+            if (next.length <= 15 && charactersValid && signValid) onValueChange(next)
         },
         label = { Text(label) },
         suffix = { Text(currencyCode) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        keyboardOptions = KeyboardOptions(keyboardType = if (allowNegative) KeyboardType.Text else KeyboardType.Decimal),
         modifier = modifier,
         singleLine = true,
-        isError = parsed == null || !MoneyRules.isValid(parsed),
+        isError = !valid,
     )
 }
