@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="modern_collapse">Collapse</string>
+    <string name="modern_expand">Expand</string>
+    <string name="modern_base_earnings">Base earnings</string>
+    <string name="modern_bonuses">Bonuses</string>
+    <string name="modern_penalties">Penalties</string>
+    <string name="modern_other">Other</string>
+    <string name="modern_month_report">Monthly report</string>
+    <string name="modern_year_report">Year report</string>
+    <string name="modern_shifts">Shifts</string>
+    <string name="modern_income_by_month">Income by month</string>
+
+    <string name="modern_worked">Worked</string>
+    <string name="modern_hours">Hours</string>
+    <string name="modern_minutes">Minutes</string>
+    <string name="modern_quick_hours">%1$d h</string>
+    <string name="modern_rate_per_hour">Rate / hour</string>
+    <string name="modern_bonus">Bonus</string>
+    <string name="modern_penalty">Penalty</string>
+    <string name="modern_other_signed">Other (+/−)</string>
+    <string name="modern_note">Note</string>
+    <string name="modern_delete">Delete</string>
+    <string name="modern_save">Save</string>
+
+    <string name="modern_rate_section">Rate</string>
+    <string name="modern_default_rate_per_hour">Default rate / hour</string>
+    <string name="modern_save_default_rate">Save default rate</string>
+    <string name="modern_change_rate_month">Change rate for %1$s</string>
+    <string name="modern_currency">Currency</string>
+    <string name="modern_theme">Theme</string>
+    <string name="modern_data">Data</string>
+    <string name="modern_export_backup">Export backup</string>
+    <string name="modern_import_backup">Import backup</string>
+    <string name="modern_restore_hint">Restore replaces current data only after the file is validated and you confirm the operation.</string>
+    <string name="modern_restore_title">Restore data?</string>
+    <string name="modern_import_preview">Entries: %1$d. Rate periods: %2$d. Current data will be replaced.</string>
+    <string name="modern_restore">Restore</string>
+    <string name="modern_error">Error</string>
+    <string name="modern_month_rate_title">Rate for %1$s</string>
+    <string name="modern_apply">Apply</string>
+    <string name="modern_from_date">From date, DD.MM.YYYY</string>
+    <string name="modern_to_date_open_ended">Through date (empty = no end date)</string>
+    <string name="modern_rate_range_explainer">Existing entries in the range will explicitly receive the new rate. New entries will use it automatically.</string>
+    <string name="modern_file_open_failed">Could not open the file</string>
+    <string name="modern_backup_save_failed">Could not save the backup</string>
+    <string name="modern_file_read_failed">Could not read the file</string>
+    <string name="modern_backup_read_failed">Could not read the backup</string>
+</resources>
