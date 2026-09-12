@@ -9,6 +9,7 @@ object MoneyRules {
     const val MAX_MINOR: Long = 100_000_000_000L
 
     fun isValid(value: Long): Boolean = value in 0..MAX_MINOR
+    fun isSignedAdjustmentValid(value: Long): Boolean = value in -MAX_MINOR..MAX_MINOR
 }
 
 data class AppSettings(
@@ -23,6 +24,7 @@ data class WorkDay(
     val hourlyRateMinor: Long,
     val bonusMinor: Long = 0L,
     val penaltyMinor: Long = 0L,
+    val otherMinor: Long = 0L,
     val note: String = "",
 )
 
@@ -37,6 +39,7 @@ data class PeriodSummary(
     val baseMinor: Long = 0L,
     val bonusMinor: Long = 0L,
     val penaltyMinor: Long = 0L,
+    val otherMinor: Long = 0L,
     val totalMinor: Long = 0L,
 )
 
@@ -51,13 +54,15 @@ object WorkTimeMath {
         require(MoneyRules.isValid(day.hourlyRateMinor))
         require(MoneyRules.isValid(day.bonusMinor))
         require(MoneyRules.isValid(day.penaltyMinor))
+        require(MoneyRules.isSignedAdjustmentValid(day.otherMinor))
         val base = divideRoundedHalfUp(
             Math.multiplyExact(day.hourlyRateMinor, day.workedMinutes.toLong()),
             60L,
         )
+        val beforeOther = Math.subtractExact(Math.addExact(base, day.bonusMinor), day.penaltyMinor)
         return DayPay(
             baseMinor = base,
-            totalMinor = Math.subtractExact(Math.addExact(base, day.bonusMinor), day.penaltyMinor),
+            totalMinor = Math.addExact(beforeOther, day.otherMinor),
         )
     }
 
@@ -67,6 +72,7 @@ object WorkTimeMath {
         var base = 0L
         var bonus = 0L
         var penalty = 0L
+        var other = 0L
         var total = 0L
         days.forEach { day ->
             val pay = payForDay(day)
@@ -75,9 +81,18 @@ object WorkTimeMath {
             base = Math.addExact(base, pay.baseMinor)
             bonus = Math.addExact(bonus, day.bonusMinor)
             penalty = Math.addExact(penalty, day.penaltyMinor)
+            other = Math.addExact(other, day.otherMinor)
             total = Math.addExact(total, pay.totalMinor)
         }
-        return PeriodSummary(workedMinutes, shifts, base, bonus, penalty, total)
+        return PeriodSummary(
+            workedMinutes = workedMinutes,
+            shiftCount = shifts,
+            baseMinor = base,
+            bonusMinor = bonus,
+            penaltyMinor = penalty,
+            otherMinor = other,
+            totalMinor = total,
+        )
     }
 
     fun sixWeekGrid(month: YearMonth): List<LocalDate> {
