@@ -147,7 +147,7 @@ class ModernRepositoryInstrumentedTest {
             )
             legacy.execSQL(
                 "INSERT INTO modern_work_days (epochDay, workedMinutes, hourlyRateMinor, bonusMinor, penaltyMinor, note) VALUES (?, ?, ?, ?, ?, ?)",
-                arrayOf(date.toEpochDay(), 480, 25_000, 1_000, 500, "до миграции"),
+                arrayOf<Any?>(date.toEpochDay(), 480, 25_000, 1_000, 500, "до миграции"),
             )
             legacy.version = 1
         }
