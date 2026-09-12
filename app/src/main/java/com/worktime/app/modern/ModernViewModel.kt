@@ -13,6 +13,7 @@ import com.worktime.app.modern.model.WorkDay
 import java.time.LocalDate
 import java.time.Year
 import java.time.YearMonth
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
     data class DayEditorState(
         val date: LocalDate,
@@ -69,26 +71,31 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
     fun previousMonth() = selectMonth(_selectedMonth.value.minusMonths(1))
     fun nextMonth() = selectMonth(_selectedMonth.value.plusMonths(1))
     fun currentMonth() = selectMonth(YearMonth.now())
+
     fun selectMonth(month: YearMonth) {
         _selectedMonth.value = month
         _selectedYear.value = month.year
     }
+
     fun previousYear() { _selectedYear.value -= 1 }
     fun nextYear() { _selectedYear.value += 1 }
 
     fun openDay(date: LocalDate) {
         viewModelScope.launch {
-            val existing = repository.getDay(date)
-            val rate = existing?.hourlyRateMinor ?: repository.effectiveRate(date)
-            _editor.value = DayEditorState(
-                date = date,
-                workedMinutes = existing?.workedMinutes ?: 0,
-                rateMinor = rate,
-                bonusMinor = existing?.bonusMinor ?: 0L,
-                penaltyMinor = existing?.penaltyMinor ?: 0L,
-                note = existing?.note.orEmpty(),
-                exists = existing != null,
-            )
+            runCatching {
+                val existing = repository.getDay(date)
+                val rate = existing?.hourlyRateMinor ?: repository.effectiveRate(date)
+                DayEditorState(
+                    date = date,
+                    workedMinutes = existing?.workedMinutes ?: 0,
+                    rateMinor = rate,
+                    bonusMinor = existing?.bonusMinor ?: 0L,
+                    penaltyMinor = existing?.penaltyMinor ?: 0L,
+                    note = existing?.note.orEmpty(),
+                    exists = existing != null,
+                )
+            }.onSuccess { _editor.value = it }
+                .onFailure { reportError(it.message ?: "Не удалось открыть день") }
         }
     }
 
