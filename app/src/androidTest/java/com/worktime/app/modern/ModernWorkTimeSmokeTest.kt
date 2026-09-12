@@ -1,4 +1,4 @@
-package com.worktime.app.ui
+package com.worktime.app.modern
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
@@ -16,12 +16,12 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class WorkTimeSmokeTest {
+class ModernWorkTimeSmokeTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun modernCalendarStartsOpensSettingsAndReturnsWithSystemBack() {
+    fun calendarStartsExposesLocalizedSemanticsAndReturnsFromSettingsWithSystemBack() {
         val activity = composeRule.activity
         val settings = activity.getString(R.string.settings)
         val locale = activity.resources.configuration.locales[0]

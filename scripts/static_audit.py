@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fast invariants for the 2026 Worktime rewrite."""
+"""Fast invariants for the 2026 WorkTime rewrite."""
 
 from __future__ import annotations
 
@@ -112,6 +112,7 @@ legacy_paths = (
     APP / "src/test/java/com/worktime/app/data",
     APP / "src/test/java/com/worktime/app/domain",
     APP / "src/test/java/com/worktime/app/ui",
+    APP / "src/androidTest/java/com/worktime/app/ui",
     APP / "src/screenshotTestDebug",
     APP / "src/release",
     APP / "schemas/com.worktime.app.data.db.WorkTimeDatabase",
@@ -142,6 +143,7 @@ required_files = (
     modern_root / "ui/DayEditorSheet.kt",
     modern_root / "ui/Reports.kt",
     modern_root / "ui/SettingsScreen.kt",
+    APP / "src/androidTest/java/com/worktime/app/modern/ModernWorkTimeSmokeTest.kt",
     APP / "schemas/com.worktime.app.modern.data.ModernDatabase/2.json",
 )
 for path in required_files:

@@ -1,57 +1,72 @@
-# Android modernization status
+# 2026 rewrite status
 
-This document records the repository-level modernization audit against the project Android 2026 standard.
+This file describes the new implementation on `rewrite/worktime-2026`. It intentionally does not inherit completion claims from the previous WorkTime codebase.
 
-## Status
+## Implemented
 
-- **Repository modernization:** complete.
-- **Application/code baseline:** PR #95, `49d5bfa71e3d49a713377548c5bcf0378796d9ca`.
-- **Post-merge Android CI:** run `33328647740`, completed successfully on that exact SHA.
-- **Production release/device sign-off:** pending physical-device QA listed below.
+- single-activity Compose application;
+- Material 3 light/dark/system themes;
+- fixed 7 × 6 monthly calendar with today/selected/saved/adjacent-month states;
+- localized calendar accessibility descriptions;
+- day add/edit/delete with worked minutes, rate, bonus, fine, signed other adjustment and note;
+- exact integer money calculations and checked arithmetic;
+- compact/expanded monthly summary;
+- monthly and yearly reports with 12-month income overview;
+- default rate, month rate, bounded range rate and open-ended rate-from-date;
+- explicit historical rate snapshots and transactional bulk changes;
+- Room-backed work days, rate periods and settings;
+- versioned JSON export/import with preview and transactional restore;
+- Navigation 3 back stack with system/predictive Back integration;
+- edge-to-edge/safe-drawing handling and bounded large-screen content width;
+- moderate haptic feedback for destructive day deletion;
+- Russian and default resources for the modern UI;
+- debug application-ID isolation from the production package;
+- optimized/R8 release build and signing verification path.
 
-The physical checks are release gates, not unfinished architecture/refactoring work. A later documentation-only commit may move `main`; the SHA above identifies the audited application/code baseline.
+## Automated gates
 
-## Repository audit
+The branch CI is designed to require all of the following on every head before it is considered validated:
 
-| Area | Repository evidence | Status |
-|---|---|---|
-| Compose / state architecture | Compose UI, screen ViewModels/state holders, `StateFlow`, lifecycle-aware collection, repository/data boundaries | Complete |
-| Data | Room for entries, DataStore for preferences, WorkManager only for persistent scheduling, manual constructor DI | Complete |
-| Design system | Material 3 theme plus shared spacing/shape/component/motion contracts | Complete |
-| Edge-to-edge / adaptive UI | Window-size-aware calendar layouts, compact-height handling, supporting pane, system-bar/IME inset handling; no orientation lock | Complete in implementation and automated coverage |
-| Navigation / motion | Navigation 3 full-screen destinations, predictive-back integration, pager/gesture-driven month and year navigation, restrained shared motion rules | Complete in implementation and automated coverage |
-| Accessibility | semantics, content descriptions, touch-target/static/UI coverage, large-font and accessibility test coverage | Automated portion complete; physical TalkBack pass pending |
-| Tests | JVM/unit, Compose/device instrumentation, screenshot regression, lint/static audit, API 30 matrix, API 37 smoke | Complete for repository CI |
-| Release optimization | optimized release build, R8, Baseline Profile and Startup Profile, signing smoke | Complete for repository CI |
-| Performance pipeline | Baseline Profile generation/update workflow, Macrobenchmark module/workflow and thresholds | Pipeline complete; representative physical-device measurement pending |
-| Security/privacy | no `INTERNET` permission, cleartext disabled, explicit exported surfaces, release-signing checks, dependency/security workflows, no production private key in Git | Complete for repository audit |
+- rewrite static audit;
+- JVM/unit tests;
+- debug and release lint;
+- debug, androidTest and optimized release compilation;
+- committed Room-schema drift check;
+- API 30 managed-device instrumented suite, including repository/rate/backup/migration coverage and modern UI smoke;
+- API 37 modern startup/navigation/accessibility smoke;
+- disposable-key release-signing smoke;
+- APK and R8 mapping artifacts.
 
-## Baseline Profile integrity
+A check is evidence only when it has actually completed successfully for the exact commit. Do not infer a future commit is green from an earlier run.
 
-The release-consumed checked-in profiles are distinct:
+## Deliberately removed legacy evidence
 
-- `baseline-prof.txt` blob: `87251a59d44b4d2488e9bb84b39fe9b6db16c7e8`
-- `startup-prof.txt` blob: `4873b70ad8f3dcbf5dc82cf3871805b686db6bca`
+The rewrite branch no longer compiles or ships the old:
 
-The static modernization audit fails if the profiles become identical/stale or if required runtime calendar rules disappear from the baseline profile.
+- `data`, `domain` and `ui` runtime trees;
+- `AppContainer` / `WorkTimeApplication` bootstrap;
+- legacy Room schema;
+- widget implementation/resources;
+- screenshot baselines;
+- Baseline Profile / Macrobenchmark modules and workflows;
+- tests that exercised the rejected runtime rather than the rewrite.
 
-## Remaining physical release gates
+Historical files remain recoverable from Git history. Their previous passing tests are not evidence for this implementation.
 
-These items cannot be established reliably by GitHub-hosted CI and emulators alone:
+## Release gates still open
 
-1. Walk the key flows with TalkBack on a physical device and verify focus/order/state announcements.
-2. Verify Gboard/OEM numeric IME continuity during repeated duration/rate/bonus/penalty editing.
-3. Verify the documented haptic set on hardware.
-4. Exercise rotation, split/freeform resize and window-size changes on representative hardware while preserving drafts, selection and persisted state.
-5. Install the exact signed release APK fresh and as an update over the previous public APK; verify data retention, checksum and signer.
-6. Run Macrobenchmark against the exact release candidate on a representative physical device and retain startup/frame P95/P99 evidence.
+The rewrite must not be described as a completed public replacement until these are resolved:
 
-Until those checks pass, the repository/refactoring work is complete but the application should not be described as fully device-verified or as having completed the complete release Definition of Done.
+1. **Old-data policy.** The rewrite uses `worktime-modern.db`. Decide whether the first rewrite release is intentionally clean-state or implement/test deterministic migration/import from the published app.
+2. **Versioning.** Increment `versionCode` and choose the release `versionName` before distribution as an update.
+3. **Physical-device accessibility.** Walk the main flows with TalkBack and large font scales on hardware.
+4. **Keyboard/OEM behavior.** Verify repeated numeric editing with a real IME and bottom-sheet resize behavior.
+5. **Haptics.** Confirm the deliberately small haptic set feels appropriate on hardware.
+6. **Large/resizable configuration.** Validate at least one tablet/foldable/freeform-resize case; Android may ignore the phone portrait request on large screens.
+7. **Visual QA.** Capture and review current rewrite screens. Old screenshots were removed because they represented the rejected design.
+8. **Exact release update.** Build with the production signing identity and install that exact APK over the previous public release according to the selected data policy.
+9. **Performance measurement.** Measure the modern app first. Add a new Baseline Profile only if measurements justify it; never reuse the old profile.
 
-## Source-of-truth documents
+## Definition of repository-level completion
 
-- `ANDROID_QA.md` — manual interaction/accessibility checklist.
-- `ANDROID_DEVICE_TESTING.md` — device and emulator setup/test matrix.
-- `RELEASE_CHECKLIST.md` — exact release-candidate gate.
-- `BACKLOG.md` — remaining physical release work.
-- `ROADMAP.md` — current release state and future product work.
+Repository-level rewrite work is complete only when the exact candidate commit has green automated gates, the active source tree contains only the modern runtime, documentation describes the actual implementation, and known release limitations are stated rather than hidden.

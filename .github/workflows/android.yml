@@ -180,11 +180,11 @@ jobs:
           sudo udevadm trigger --name-match=kvm
       - name: Accept Android SDK licenses
         run: yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
-      - name: Run API 37 startup smoke
+      - name: Run API 37 modern smoke
         run: |
           ./gradlew --no-daemon \
             :app:pixel6Api37DebugAndroidTest \
-            -Pandroid.testInstrumentationRunnerArguments.class=com.worktime.app.ui.WorkTimeSmokeTest \
+            -Pandroid.testInstrumentationRunnerArguments.class=com.worktime.app.modern.ModernWorkTimeSmokeTest \
             -Pandroid.testoptions.manageddevices.emulator.gpu=swiftshader_indirect \
             --stacktrace
       - name: Upload API 37 smoke reports
