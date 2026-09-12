@@ -14,6 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,8 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.worktime.app.R
 import com.worktime.app.modern.ModernViewModel
 import java.time.YearMonth
 
@@ -34,6 +39,7 @@ private val ModernContentMaxWidth = 720.dp
 fun ModernWorkTimeApp(viewModel: ModernViewModel) {
     var destination by remember { mutableStateOf(ModernDestination.CALENDAR) }
     val month by viewModel.selectedMonth.collectAsStateWithLifecycle()
+    val lastError by viewModel.lastError.collectAsStateWithLifecycle()
 
     BackHandler(enabled = destination != ModernDestination.CALENDAR) {
         destination = when (destination) {
@@ -97,4 +103,35 @@ fun ModernWorkTimeApp(viewModel: ModernViewModel) {
             }
         }
     }
+
+    lastError?.let { error ->
+        AlertDialog(
+            onDismissRequest = viewModel::consumeError,
+            title = { Text(stringResource(R.string.modern_error)) },
+            text = { Text(errorMessage(error)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::consumeError) {
+                    Text(stringResource(R.string.ok))
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun errorMessage(error: ModernViewModel.ErrorState): String = when (error) {
+    is ModernViewModel.ErrorState.Message -> error.text
+    is ModernViewModel.ErrorState.Known -> stringResource(
+        when (error.kind) {
+            ModernViewModel.ErrorKind.OPEN_DAY -> R.string.modern_error_open_day
+            ModernViewModel.ErrorKind.SAVE_DAY -> R.string.modern_error_save_day
+            ModernViewModel.ErrorKind.DELETE_DAY -> R.string.modern_error_delete_day
+            ModernViewModel.ErrorKind.SAVE_SETTING -> R.string.modern_error_save_setting
+            ModernViewModel.ErrorKind.PREPARE_RATE_CHANGE -> R.string.modern_error_prepare_rate
+            ModernViewModel.ErrorKind.APPLY_RATE_CHANGE -> R.string.modern_error_apply_rate
+            ModernViewModel.ErrorKind.CREATE_BACKUP -> R.string.modern_error_create_backup
+            ModernViewModel.ErrorKind.INVALID_BACKUP -> R.string.modern_error_invalid_backup
+            ModernViewModel.ErrorKind.RESTORE_BACKUP -> R.string.modern_error_restore_backup
+        },
+    )
 }
