@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.worktime.app.MainActivity
+import com.worktime.app.R
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,8 +19,10 @@ class WorkTimeSmokeTest {
 
     @Test
     fun modernCalendarStartsAndOpensSettings() {
-        composeRule.onNodeWithContentDescription("Настройки").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("Настройки").performClick()
-        composeRule.onNodeWithText("Настройки").assertIsDisplayed()
+        val settings = composeRule.activity.getString(R.string.settings)
+
+        composeRule.onNodeWithContentDescription(settings).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(settings).performClick()
+        composeRule.onNodeWithText(settings).assertIsDisplayed()
     }
 }
