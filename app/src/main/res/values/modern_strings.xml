@@ -37,6 +37,15 @@
     <string name="modern_import_preview">Entries: %1$d. Rate periods: %2$d. Current data will be replaced.</string>
     <string name="modern_restore">Restore</string>
     <string name="modern_error">Error</string>
+    <string name="modern_error_open_day">Could not open this day.</string>
+    <string name="modern_error_save_day">Could not save this day. Your editor remains open.</string>
+    <string name="modern_error_delete_day">Could not delete this day.</string>
+    <string name="modern_error_save_setting">Could not save the setting.</string>
+    <string name="modern_error_prepare_rate">Could not prepare the rate change.</string>
+    <string name="modern_error_apply_rate">Could not apply the rate change.</string>
+    <string name="modern_error_create_backup">Could not create the backup.</string>
+    <string name="modern_error_invalid_backup">The selected backup file is invalid or unsupported.</string>
+    <string name="modern_error_restore_backup">Could not restore the backup. Current data was left unchanged.</string>
     <string name="modern_month_rate_title">Rate for %1$s</string>
     <string name="modern_apply">Apply</string>
     <string name="modern_from_date">From date, DD.MM.YYYY</string>
