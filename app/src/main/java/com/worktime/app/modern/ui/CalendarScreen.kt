@@ -2,12 +2,14 @@ package com.worktime.app.modern.ui
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -45,6 +47,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -108,6 +111,7 @@ fun CalendarScreen(
             SixWeekCalendar(
                 month = shownMonth,
                 entries = entries,
+                selectedDate = editor?.date,
                 currencyCode = settings.currencyCode,
                 onDateClick = viewModel::openDay,
             )
@@ -197,6 +201,7 @@ private fun WeekdayHeader() {
 private fun SixWeekCalendar(
     month: YearMonth,
     entries: Map<LocalDate, WorkDay>,
+    selectedDate: LocalDate?,
     currencyCode: String,
     onDateClick: (LocalDate) -> Unit,
 ) {
@@ -210,6 +215,7 @@ private fun SixWeekCalendar(
                     DayCell(
                         date = date,
                         inMonth = inMonth,
+                        selected = inMonth && selectedDate == date,
                         entry = if (inMonth) entries[date] else null,
                         currencyCode = currencyCode,
                         modifier = Modifier
@@ -227,6 +233,7 @@ private fun SixWeekCalendar(
 private fun DayCell(
     date: LocalDate,
     inMonth: Boolean,
+    selected: Boolean,
     entry: WorkDay?,
     currencyCode: String,
     modifier: Modifier,
@@ -254,11 +261,12 @@ private fun DayCell(
             earningsText.orEmpty(),
         )
     }
-    val container = when {
+    val targetContainer = when {
         today -> MaterialTheme.colorScheme.primaryContainer
         entry != null -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.62f)
         else -> Color.Transparent
     }
+    val container by animateColorAsState(targetValue = targetContainer, label = "day_cell_container")
     val content = when {
         !inMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.30f)
         today -> MaterialTheme.colorScheme.onPrimaryContainer
@@ -270,6 +278,7 @@ private fun DayCell(
         shape = RoundedCornerShape(14.dp),
         color = container,
         contentColor = content,
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         tonalElevation = if (entry != null) 1.dp else 0.dp,
     ) {
         Column(
@@ -278,6 +287,7 @@ private fun DayCell(
                 .clickable(enabled = inMonth, onClick = onClick)
                 .semantics(mergeDescendants = true) {
                     contentDescription = accessibilityDescription
+                    this.selected = selected
                 }
                 .padding(horizontal = 4.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -285,7 +295,7 @@ private fun DayCell(
             Text(
                 text = date.dayOfMonth.toString(),
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = if (today) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (today || selected) FontWeight.Bold else FontWeight.Medium,
             )
             if (entry != null) {
                 Spacer(Modifier.weight(1f))
