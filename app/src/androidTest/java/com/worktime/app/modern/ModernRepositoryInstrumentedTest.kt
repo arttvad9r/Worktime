@@ -52,6 +52,43 @@ class ModernRepositoryInstrumentedTest {
     }
 
     @Test
+    fun latestOverlappingRatePeriodWinsForNewDays() = runBlocking {
+        val september = LocalDate.of(2026, 9, 1)
+        repository.applyRate(september, LocalDate.of(2026, 9, 30), 25_000)
+        repository.applyRate(LocalDate.of(2026, 9, 15), LocalDate.of(2026, 9, 20), 30_000)
+
+        assertEquals(25_000L, repository.effectiveRate(LocalDate.of(2026, 9, 10)))
+        assertEquals(30_000L, repository.effectiveRate(LocalDate.of(2026, 9, 16)))
+        assertEquals(25_000L, repository.effectiveRate(LocalDate.of(2026, 9, 25)))
+    }
+
+    @Test
+    fun changingDefaultRateDoesNotRewriteStoredShiftSnapshot() = runBlocking {
+        val storedDate = LocalDate.of(2026, 10, 5)
+        val futureDate = LocalDate.of(2026, 10, 6)
+        repository.saveDay(WorkDay(storedDate, 480, 25_000))
+
+        repository.updateSettings { it.copy(defaultRateMinor = 50_000) }
+
+        assertEquals(25_000L, repository.getDay(storedDate)?.hourlyRateMinor)
+        assertEquals(25_000L, repository.effectiveRate(storedDate))
+        assertEquals(50_000L, repository.effectiveRate(futureDate))
+    }
+
+    @Test
+    fun explicitBulkRateChangeRewritesStoredSnapshotsOnlyInsideRange() = runBlocking {
+        val inside = LocalDate.of(2026, 11, 10)
+        val outside = LocalDate.of(2026, 11, 21)
+        repository.saveDay(WorkDay(inside, 480, 25_000))
+        repository.saveDay(WorkDay(outside, 480, 25_000))
+
+        repository.applyRate(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 20), 35_000)
+
+        assertEquals(35_000L, repository.getDay(inside)?.hourlyRateMinor)
+        assertEquals(25_000L, repository.getDay(outside)?.hourlyRateMinor)
+    }
+
+    @Test
     fun backupRestoreRoundTripReplacesDatabaseAtomically() = runBlocking {
         val date = LocalDate.of(2026, 9, 12)
         repository.saveDay(WorkDay(date, 510, 30_000, bonusMinor = 5_000, penaltyMinor = 1_000, note = "смена"))
