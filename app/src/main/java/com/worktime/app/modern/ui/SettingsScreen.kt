@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
@@ -38,12 +38,15 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.worktime.app.modern.ModernViewModel
+import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
+import java.time.format.ResolverStyle
 
-private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd.MM.uuuu")
+private val dateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("dd.MM.uuuu").withResolverStyle(ResolverStyle.STRICT)
 
 @Composable
 fun SettingsScreen(
@@ -59,6 +62,7 @@ fun SettingsScreen(
     var showMonthRate by remember { mutableStateOf(false) }
     var showRangeRate by remember { mutableStateOf(false) }
     var exportText by remember { mutableStateOf<String?>(null) }
+    val parsedDefaultRate = parseMoneyMinor(defaultRateInput)
 
     val exportLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json"),
@@ -90,7 +94,7 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
             }
             Text(
                 "Настройки",
@@ -117,11 +121,16 @@ fun SettingsScreen(
                         suffix = { Text(settings.currencyCode) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                         singleLine = true,
+                        isError = parsedDefaultRate == null || !MoneyRules.isValid(parsedDefaultRate),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Button(
-                        onClick = { parseMoneyMinor(defaultRateInput)?.let(viewModel::setDefaultRate) },
-                        enabled = parseMoneyMinor(defaultRateInput) != null,
+                        onClick = {
+                            parsedDefaultRate
+                                ?.takeIf(MoneyRules::isValid)
+                                ?.let(viewModel::setDefaultRate)
+                        },
+                        enabled = parsedDefaultRate != null && MoneyRules.isValid(parsedDefaultRate),
                         modifier = Modifier.fillMaxWidth(),
                     ) { Text("Сохранить стандартную ставку") }
                     OutlinedButton(onClick = { showMonthRate = true }, modifier = Modifier.fillMaxWidth()) {
@@ -255,6 +264,7 @@ private fun MonthRateDialog(
 ) {
     var value by remember { mutableStateOf("") }
     val parsed = parseMoneyMinor(value)
+    val valid = parsed != null && MoneyRules.isValid(parsed)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Ставка за ${monthTitle(month)}") },
@@ -266,12 +276,14 @@ private fun MonthRateDialog(
                 suffix = { Text(currencyCode) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
+                isError = value.isNotBlank() && !valid,
             )
         },
         confirmButton = {
-            TextButton(onClick = { onApply(parsed!!) }, enabled = parsed != null && parsed >= 0L) {
-                Text("Применить")
-            }
+            TextButton(
+                onClick = { parsed?.takeIf(MoneyRules::isValid)?.let(onApply) },
+                enabled = valid,
+            ) { Text("Применить") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     )
@@ -290,7 +302,8 @@ private fun RangeRateDialog(
     val end = endText.takeIf(String::isNotBlank)?.let { runCatching { LocalDate.parse(it, dateFormatter) }.getOrNull() }
     val rate = parseMoneyMinor(rateText)
     val endValid = endText.isBlank() || end != null
-    val valid = start != null && endValid && (end == null || !end.isBefore(start)) && rate != null && rate >= 0L
+    val rateValid = rate != null && MoneyRules.isValid(rate)
+    val valid = start != null && endValid && (end == null || !end.isBefore(start)) && rateValid
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -318,6 +331,7 @@ private fun RangeRateDialog(
                     suffix = { Text(currencyCode) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
+                    isError = rateText.isNotBlank() && !rateValid,
                 )
                 Text(
                     "Существующие записи в диапазоне будут явно пересчитаны на новую ставку. Новые записи получат её автоматически.",
@@ -326,7 +340,14 @@ private fun RangeRateDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = { onApply(start!!, end, rate!!) }, enabled = valid) { Text("Применить") }
+            TextButton(
+                onClick = {
+                    val validStart = start ?: return@TextButton
+                    val validRate = rate?.takeIf(MoneyRules::isValid) ?: return@TextButton
+                    onApply(validStart, end, validRate)
+                },
+                enabled = valid,
+            ) { Text("Применить") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     )
