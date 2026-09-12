@@ -1,6 +1,8 @@
 package com.worktime.app.modern.backup
 
+import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
+import java.time.LocalDate
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -46,7 +48,8 @@ data class BackupPreview(
 
 object ModernBackupCodec {
     private const val SCHEMA_VERSION = 1
-    private const val MAX_MONEY_MINOR = 100_000_000_000L
+    private const val MAX_WORK_DAYS = 100_000
+    private const val MAX_RATE_PERIODS = 100_000
     private val json = Json {
         prettyPrint = true
         encodeDefaults = true
@@ -74,22 +77,38 @@ object ModernBackupCodec {
 
     private fun validate(payload: ModernBackupPayload) {
         require(payload.schemaVersion == SCHEMA_VERSION) { "Unsupported schemaVersion=${payload.schemaVersion}" }
-        require(payload.settings.defaultRateMinor in 0..MAX_MONEY_MINOR)
+        require(MoneyRules.isValid(payload.settings.defaultRateMinor))
         require(payload.settings.currencyCode.matches(Regex("[A-Z]{3}")))
         ThemeMode.valueOf(payload.settings.themeMode)
+
+        require(payload.workDays.size <= MAX_WORK_DAYS) { "Too many work days" }
+        require(payload.ratePeriods.size <= MAX_RATE_PERIODS) { "Too many rate periods" }
         require(payload.workDays.map { it.epochDay }.distinct().size == payload.workDays.size) {
             "Duplicate work day"
         }
+        require(payload.ratePeriods.map { it.id }.distinct().size == payload.ratePeriods.size) {
+            "Duplicate rate period id"
+        }
+
         payload.workDays.forEach { day ->
+            validateEpochDay(day.epochDay)
             require(day.workedMinutes in 0..1440)
-            require(day.hourlyRateMinor in 0..MAX_MONEY_MINOR)
-            require(day.bonusMinor in 0..MAX_MONEY_MINOR)
-            require(day.penaltyMinor in 0..MAX_MONEY_MINOR)
-            require(day.note.length <= 2000)
+            require(MoneyRules.isValid(day.hourlyRateMinor))
+            require(MoneyRules.isValid(day.bonusMinor))
+            require(MoneyRules.isValid(day.penaltyMinor))
+            require(day.note.length <= 2_000)
         }
         payload.ratePeriods.forEach { period ->
-            require(period.hourlyRateMinor in 0..MAX_MONEY_MINOR)
+            require(period.id > 0L)
+            validateEpochDay(period.startEpochDay)
+            period.endEpochDay?.let(::validateEpochDay)
+            require(MoneyRules.isValid(period.hourlyRateMinor))
             require(period.endEpochDay == null || period.endEpochDay >= period.startEpochDay)
         }
+    }
+
+    private fun validateEpochDay(epochDay: Long) {
+        runCatching { LocalDate.ofEpochDay(epochDay) }
+            .getOrElse { throw IllegalArgumentException("Invalid epochDay=$epochDay", it) }
     }
 }
