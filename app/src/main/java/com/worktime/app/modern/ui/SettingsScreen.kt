@@ -59,7 +59,6 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val pendingImport by viewModel.pendingImport.collectAsStateWithLifecycle()
     val pendingRateChange by viewModel.pendingRateChange.collectAsStateWithLifecycle()
-    val lastError by viewModel.lastError.collectAsStateWithLifecycle()
     val context = LocalContext.current
     var defaultRateInput by remember(settings.defaultRateMinor) { mutableStateOf(moneyInput(settings.defaultRateMinor)) }
     var showMonthRate by remember { mutableStateOf(false) }
@@ -288,14 +287,6 @@ fun SettingsScreen(
             dismissButton = {
                 TextButton(onClick = viewModel::cancelImport) { Text(stringResource(R.string.cancel)) }
             },
-        )
-    }
-    lastError?.let { message ->
-        AlertDialog(
-            onDismissRequest = viewModel::consumeError,
-            title = { Text(stringResource(R.string.modern_error)) },
-            text = { Text(message) },
-            confirmButton = { TextButton(onClick = viewModel::consumeError) { Text(stringResource(R.string.ok)) } },
         )
     }
 }
