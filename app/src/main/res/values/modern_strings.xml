@@ -42,6 +42,11 @@
     <string name="modern_from_date">From date, DD.MM.YYYY</string>
     <string name="modern_to_date_open_ended">Through date (empty = no end date)</string>
     <string name="modern_rate_range_explainer">Existing entries in the range will explicitly receive the new rate. New entries will use it automatically.</string>
+    <string name="modern_rate_confirm_title">Apply rate change?</string>
+    <string name="modern_rate_confirm_period">Period: %1$s — %2$s</string>
+    <string name="modern_rate_confirm_open_period">From %1$s onward</string>
+    <string name="modern_rate_confirm_value">New rate: %1$s</string>
+    <string name="modern_rate_confirm_affected">Existing entries affected: %1$d</string>
     <string name="modern_file_open_failed">Could not open the file</string>
     <string name="modern_backup_save_failed">Could not save the backup</string>
     <string name="modern_file_read_failed">Could not read the file</string>
