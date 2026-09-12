@@ -6,6 +6,7 @@ import com.worktime.app.modern.backup.BackupSettings
 import com.worktime.app.modern.backup.BackupWorkDay
 import com.worktime.app.modern.backup.ModernBackupPayload
 import com.worktime.app.modern.model.AppSettings
+import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
 import com.worktime.app.modern.model.WorkDay
 import java.time.LocalDate
@@ -37,10 +38,7 @@ class ModernRepository(private val database: ModernDatabase) {
     }
 
     suspend fun saveDay(day: WorkDay) {
-        require(day.workedMinutes in 0..1440)
-        require(day.hourlyRateMinor >= 0L)
-        require(day.bonusMinor >= 0L)
-        require(day.penaltyMinor >= 0L)
+        validateDay(day)
         if (day.workedMinutes == 0 && day.bonusMinor == 0L && day.penaltyMinor == 0L && day.note.isBlank()) {
             workDays.delete(day.date.toEpochDay())
         } else {
@@ -51,7 +49,7 @@ class ModernRepository(private val database: ModernDatabase) {
     suspend fun deleteDay(date: LocalDate) = workDays.delete(date.toEpochDay())
 
     suspend fun applyRate(start: LocalDate, endInclusive: LocalDate?, rateMinor: Long): Int {
-        require(rateMinor >= 0L)
+        require(MoneyRules.isValid(rateMinor))
         require(endInclusive == null || !endInclusive.isBefore(start))
         return database.withTransaction {
             rates.insert(
@@ -72,7 +70,7 @@ class ModernRepository(private val database: ModernDatabase) {
     suspend fun updateSettings(transform: (AppSettings) -> AppSettings) {
         val current = settingsDao.get()?.toModel() ?: AppSettings()
         val updated = transform(current)
-        require(updated.defaultRateMinor >= 0L)
+        require(MoneyRules.isValid(updated.defaultRateMinor))
         require(updated.currencyCode.matches(Regex("[A-Z]{3}")))
         settingsDao.upsert(updated.toEntity())
     }
@@ -97,6 +95,29 @@ class ModernRepository(private val database: ModernDatabase) {
     )
 
     suspend fun restoreBackup(payload: ModernBackupPayload) {
+        require(MoneyRules.isValid(payload.settings.defaultRateMinor))
+        require(payload.settings.currencyCode.matches(Regex("[A-Z]{3}")))
+        ThemeMode.valueOf(payload.settings.themeMode)
+        payload.workDays.forEach {
+            validateDay(
+                WorkDay(
+                    date = LocalDate.ofEpochDay(it.epochDay),
+                    workedMinutes = it.workedMinutes,
+                    hourlyRateMinor = it.hourlyRateMinor,
+                    bonusMinor = it.bonusMinor,
+                    penaltyMinor = it.penaltyMinor,
+                    note = it.note,
+                ),
+            )
+        }
+        payload.ratePeriods.forEach {
+            require(it.id > 0L)
+            require(MoneyRules.isValid(it.hourlyRateMinor))
+            require(it.endEpochDay == null || it.endEpochDay >= it.startEpochDay)
+            LocalDate.ofEpochDay(it.startEpochDay)
+            it.endEpochDay?.let(LocalDate::ofEpochDay)
+        }
+
         database.withTransaction {
             workDays.deleteAll()
             rates.deleteAll()
@@ -119,6 +140,14 @@ class ModernRepository(private val database: ModernDatabase) {
                 ),
             )
         }
+    }
+
+    private fun validateDay(day: WorkDay) {
+        require(day.workedMinutes in 0..1440)
+        require(MoneyRules.isValid(day.hourlyRateMinor))
+        require(MoneyRules.isValid(day.bonusMinor))
+        require(MoneyRules.isValid(day.penaltyMinor))
+        require(day.note.length <= 2_000)
     }
 
     private fun WorkDayEntity.toModel() = WorkDay(
