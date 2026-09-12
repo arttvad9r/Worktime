@@ -30,13 +30,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.worktime.app.R
 import com.worktime.app.modern.ModernViewModel
 import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.WorkDay
 import com.worktime.app.modern.model.WorkTimeMath
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,6 +64,10 @@ fun DayEditorSheet(
     var other by remember(state.date, state.otherMinor) { mutableStateOf(moneyInput(state.otherMinor)) }
     var note by remember(state.date, state.note) { mutableStateOf(state.note) }
     val haptics = LocalHapticFeedback.current
+    val locale = Locale.getDefault()
+    val dateText = remember(state.date, locale) {
+        state.date.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale))
+    }
 
     val hourValue = hours.toIntOrNull()
     val minuteValue = minutes.toIntOrNull()
@@ -86,17 +95,17 @@ fun DayEditorSheet(
                 .padding(bottom = 24.dp),
         ) {
             Text(
-                text = "%02d.%02d.%04d".format(state.date.dayOfMonth, state.date.monthValue, state.date.year),
+                text = dateText,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.SemiBold,
             )
             Spacer(Modifier.height(14.dp))
-            Text("Отработано", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.modern_worked), style = MaterialTheme.typography.labelLarge)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 OutlinedTextField(
                     value = hours,
                     onValueChange = { hours = it.filter(Char::isDigit).take(2) },
-                    label = { Text("Часы") },
+                    label = { Text(stringResource(R.string.modern_hours)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
@@ -105,7 +114,7 @@ fun DayEditorSheet(
                 OutlinedTextField(
                     value = minutes,
                     onValueChange = { minutes = it.filter(Char::isDigit).take(2) },
-                    label = { Text("Минуты") },
+                    label = { Text(stringResource(R.string.modern_minutes)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     singleLine = true,
@@ -123,17 +132,29 @@ fun DayEditorSheet(
                             minutes = "0"
                         },
                         modifier = Modifier.weight(1f),
-                    ) { Text("$quickHours ч") }
+                    ) { Text(stringResource(R.string.modern_quick_hours, quickHours)) }
                 }
             }
 
-            MoneyField("Ставка / час", rate, { rate = it }, currencyCode)
+            MoneyField(stringResource(R.string.modern_rate_per_hour), rate, { rate = it }, currencyCode)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                MoneyField("Премия", bonus, { bonus = it }, currencyCode, Modifier.weight(1f))
-                MoneyField("Штраф", penalty, { penalty = it }, currencyCode, Modifier.weight(1f))
+                MoneyField(
+                    stringResource(R.string.modern_bonus),
+                    bonus,
+                    { bonus = it },
+                    currencyCode,
+                    Modifier.weight(1f),
+                )
+                MoneyField(
+                    stringResource(R.string.modern_penalty),
+                    penalty,
+                    { penalty = it },
+                    currencyCode,
+                    Modifier.weight(1f),
+                )
             }
             MoneyField(
-                label = "Прочее (+/−)",
+                label = stringResource(R.string.modern_other_signed),
                 value = other,
                 onValueChange = { other = it },
                 currencyCode = currencyCode,
@@ -142,7 +163,7 @@ fun DayEditorSheet(
             OutlinedTextField(
                 value = note,
                 onValueChange = { if (it.length <= 500) note = it },
-                label = { Text("Заметка") },
+                label = { Text(stringResource(R.string.modern_note)) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 1,
                 maxLines = 3,
@@ -185,14 +206,14 @@ fun DayEditorSheet(
                         },
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Text("Удалить", modifier = Modifier.padding(start = 6.dp))
+                        Text(stringResource(R.string.modern_delete), modifier = Modifier.padding(start = 6.dp))
                     }
                 }
                 Button(
                     onClick = { onSave(workedMinutes, safeRate, safeBonus, safePenalty, safeOther, note) },
                     enabled = valid,
                     modifier = Modifier.weight(1f),
-                ) { Text("Сохранить") }
+                ) { Text(stringResource(R.string.modern_save)) }
             }
         }
     }
