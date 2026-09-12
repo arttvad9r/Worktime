@@ -188,6 +188,7 @@ private fun SummaryCard(summary: PeriodSummary, currencyCode: String) {
             SummaryRow("По сменам", formatMoney(summary.baseMinor, currencyCode))
             SummaryRow("Премии", formatMoney(summary.bonusMinor, currencyCode))
             SummaryRow("Штрафы", "−${formatMoney(summary.penaltyMinor, currencyCode)}")
+            SummaryRow("Прочее", formatMoney(summary.otherMinor, currencyCode))
         }
     }
 }
