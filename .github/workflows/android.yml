@@ -38,16 +38,15 @@ jobs:
             :app:assembleDebug \
             :app:assembleDebugAndroidTest \
             :app:assembleRelease \
-            :app:assembleBenchmark \
-            :macrobenchmark:assembleBenchmark \
-            :baselineprofile:assemble \
             --stacktrace
+      - name: Verify committed Room schema is current
+        run: git diff --exit-code -- app/schemas/com.worktime.app.modern.data.ModernDatabase
       - name: Upload generated Room schemas
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: worktime-room-schemas
-          path: app/schemas/
+          path: app/schemas/com.worktime.app.modern.data.ModernDatabase/
           if-no-files-found: error
           retention-days: 14
       - name: Upload verification reports

@@ -1,11 +1,9 @@
 plugins {
     id("com.android.application")
-    id("androidx.baselineprofile")
     id("androidx.room")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
-    id("com.android.compose.screenshot")
 }
 
 android {
@@ -26,8 +24,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     val releaseStoreFile = providers.gradleProperty("releaseStoreFile").orNull
         ?: System.getenv("RELEASE_STORE_FILE")
@@ -65,23 +61,6 @@ android {
             }
             proguardFiles("proguard-rules.pro")
         }
-
-        create("nonMinifiedRelease") {
-            initWith(getByName("release"))
-            signingConfig = signingConfigs.getByName("debug")
-            optimization {
-                enable = false
-            }
-            matchingFallbacks += listOf("release")
-        }
-
-        create("benchmark") {
-            initWith(getByName("release"))
-            applicationIdSuffix = ".benchmark"
-            versionNameSuffix = "-benchmark"
-            signingConfig = signingConfigs.getByName("debug")
-            matchingFallbacks += listOf("release")
-        }
     }
 
     testOptions {
@@ -114,11 +93,8 @@ room {
 dependencies {
     val composeBom = platform(libs.compose.bom)
 
-    baselineProfile(project(":baselineprofile"))
-
     implementation(composeBom)
     androidTestImplementation(composeBom)
-    screenshotTestImplementation(composeBom)
 
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.viewmodel.compose)
@@ -129,28 +105,21 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
-    implementation(libs.compose.material3.adaptive)
-    implementation(libs.compose.material3.adaptive.layout)
     implementation(libs.compose.material.icons.core)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
     implementation(libs.androidx.core.splashscreen)
-    implementation(libs.androidx.profileinstaller)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    implementation(libs.datastore.preferences)
     implementation(libs.coroutines.android)
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
-
-    screenshotTestImplementation(libs.compose.screenshot.validation.api)
-    screenshotTestImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

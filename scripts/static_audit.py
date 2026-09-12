@@ -37,9 +37,8 @@ android = "{http://schemas.android.com/apk/res/android}"
 application = manifest.find("application")
 if application is None:
     fail("AndroidManifest.xml has no application")
-else:
-    if application.attrib.get(android + "name"):
-        fail("Rewrite must not boot the legacy WorkTimeApplication container")
+elif application.attrib.get(android + "name"):
+    fail("Rewrite must not boot a legacy Application container")
 
 main_activity = next(
     (
@@ -53,9 +52,6 @@ if main_activity is None:
     fail("MainActivity is missing")
 elif main_activity.attrib.get(android + "screenOrientation") != "portrait":
     fail("Phone UX must be portrait as requested")
-
-if manifest.find(".//receiver[@android:name='.widget.WorkTimeWidgetProvider']", {"android": "http://schemas.android.com/apk/res/android"}) is not None:
-    fail("Legacy WorkTime widget must not be registered by the rewrite")
 
 for permission in (
     "android.permission.INTERNET",
@@ -90,6 +86,46 @@ for expected in (
     if expected not in build_text:
         fail(f"Build invariant missing: {expected}")
 
+for forbidden in (
+    "androidx.baselineprofile",
+    "com.android.compose.screenshot",
+    "screenshotTestImplementation",
+    "datastore.preferences",
+    "assembleBenchmark",
+):
+    if forbidden in build_text:
+        fail(f"Legacy build dependency/configuration remains: {forbidden}")
+
+settings_text = read(ROOT / "settings.gradle.kts")
+if 'include(":app")' not in settings_text:
+    fail("App module is not included")
+for forbidden_module in (":baselineprofile", ":macrobenchmark", ":benchmark-shared"):
+    if forbidden_module in settings_text:
+        fail(f"Legacy module still included: {forbidden_module}")
+
+legacy_paths = (
+    APP / "src/main/java/com/worktime/app/AppContainer.kt",
+    APP / "src/main/java/com/worktime/app/WorkTimeApplication.kt",
+    APP / "src/main/java/com/worktime/app/data",
+    APP / "src/main/java/com/worktime/app/domain",
+    APP / "src/main/java/com/worktime/app/ui",
+    APP / "src/test/java/com/worktime/app/data",
+    APP / "src/test/java/com/worktime/app/domain",
+    APP / "src/test/java/com/worktime/app/ui",
+    APP / "src/screenshotTestDebug",
+    APP / "src/release",
+    APP / "schemas/com.worktime.app.data.db.WorkTimeDatabase",
+    ROOT / "baselineprofile",
+    ROOT / "macrobenchmark",
+    ROOT / "benchmark-shared",
+    ROOT / ".github/workflows/baseline-profile.yml",
+    ROOT / ".github/workflows/macrobenchmark.yml",
+    ROOT / "scripts/generate_baseline_profile.sh",
+)
+for path in legacy_paths:
+    if path.exists():
+        fail(f"Legacy runtime/test artifact still active: {path.relative_to(ROOT)}")
+
 main_activity_text = read(APP / "src/main/java/com/worktime/app/MainActivity.kt")
 if '"worktime-modern.db"' not in main_activity_text:
     fail("Rewrite must use an isolated Room database file")
@@ -106,10 +142,11 @@ required_files = (
     modern_root / "ui/DayEditorSheet.kt",
     modern_root / "ui/Reports.kt",
     modern_root / "ui/SettingsScreen.kt",
+    APP / "schemas/com.worktime.app.modern.data.ModernDatabase/2.json",
 )
 for path in required_files:
     if not path.is_file():
-        fail(f"Rewrite source missing: {path.relative_to(ROOT)}")
+        fail(f"Rewrite source/schema missing: {path.relative_to(ROOT)}")
 
 for kotlin_file in modern_root.rglob("*.kt"):
     text = read(kotlin_file)
