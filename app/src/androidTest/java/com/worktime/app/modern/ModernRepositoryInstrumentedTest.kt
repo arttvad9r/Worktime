@@ -91,6 +91,20 @@ class ModernRepositoryInstrumentedTest {
     }
 
     @Test
+    fun countDaysMatchesBoundedAndOpenEndedRatePreviewRanges() = runBlocking {
+        val first = LocalDate.of(2026, 12, 1)
+        val second = LocalDate.of(2026, 12, 15)
+        val third = LocalDate.of(2027, 1, 5)
+        repository.saveDay(WorkDay(first, 480, 25_000))
+        repository.saveDay(WorkDay(second, 480, 25_000))
+        repository.saveDay(WorkDay(third, 480, 25_000))
+
+        assertEquals(2, repository.countDays(first, LocalDate.of(2026, 12, 31)))
+        assertEquals(2, repository.countDays(second, null))
+        assertEquals(0, repository.countDays(LocalDate.of(2028, 1, 1), null))
+    }
+
+    @Test
     fun backupRestoreRoundTripReplacesDatabaseAtomically() = runBlocking {
         val date = LocalDate.of(2026, 9, 12)
         repository.saveDay(
