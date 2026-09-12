@@ -8,21 +8,21 @@ import java.time.format.TextStyle
 import java.util.Currency
 import java.util.Locale
 
-private val ruLocale = Locale.forLanguageTag("ru-RU")
-
-fun formatMinutes(minutes: Int): String {
+fun formatMinutes(minutes: Int, locale: Locale = Locale.getDefault()): String {
     val hours = minutes / 60
     val rest = minutes % 60
+    val hourUnit = if (locale.language == "ru") "ч" else "h"
+    val minuteUnit = if (locale.language == "ru") "мин" else "min"
     return when {
-        minutes == 0 -> "0 ч"
-        rest == 0 -> "$hours ч"
-        hours == 0 -> "$rest мин"
-        else -> "$hours ч $rest мин"
+        minutes == 0 -> "0 $hourUnit"
+        rest == 0 -> "$hours $hourUnit"
+        hours == 0 -> "$rest $minuteUnit"
+        else -> "$hours $hourUnit $rest $minuteUnit"
     }
 }
 
-fun formatMoney(minor: Long, currencyCode: String): String {
-    val formatter = NumberFormat.getCurrencyInstance(ruLocale)
+fun formatMoney(minor: Long, currencyCode: String, locale: Locale = Locale.getDefault()): String {
+    val formatter = NumberFormat.getCurrencyInstance(locale)
     formatter.currency = runCatching { Currency.getInstance(currencyCode) }.getOrDefault(Currency.getInstance("RUB"))
     formatter.maximumFractionDigits = 2
     formatter.minimumFractionDigits = if (minor % 100L == 0L) 0 else 2
@@ -40,7 +40,7 @@ fun parseMoneyMinor(value: String): Long? = runCatching {
         .longValueExact()
 }.getOrNull()
 
-fun monthTitle(month: YearMonth): String {
-    val monthName = month.month.getDisplayName(TextStyle.FULL_STANDALONE, ruLocale)
-    return monthName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(ruLocale) else it.toString() } + " ${month.year}"
+fun monthTitle(month: YearMonth, locale: Locale = Locale.getDefault()): String {
+    val monthName = month.month.getDisplayName(TextStyle.FULL_STANDALONE, locale)
+    return monthName.replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() } + " ${month.year}"
 }
