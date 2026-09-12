@@ -1,5 +1,8 @@
 package com.worktime.app.modern.ui
 
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.worktime.app.R
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
@@ -8,16 +11,16 @@ import java.time.format.TextStyle
 import java.util.Currency
 import java.util.Locale
 
-fun formatMinutes(minutes: Int, locale: Locale = Locale.getDefault()): String {
+@Composable
+fun formatDuration(minutes: Int): String {
+    require(minutes >= 0)
     val hours = minutes / 60
     val rest = minutes % 60
-    val hourUnit = if (locale.language == "ru") "ч" else "h"
-    val minuteUnit = if (locale.language == "ru") "мин" else "min"
     return when {
-        minutes == 0 -> "0 $hourUnit"
-        rest == 0 -> "$hours $hourUnit"
-        hours == 0 -> "$rest $minuteUnit"
-        else -> "$hours $hourUnit $rest $minuteUnit"
+        minutes == 0 -> stringResource(R.string.modern_duration_zero)
+        rest == 0 -> stringResource(R.string.modern_duration_hours, hours)
+        hours == 0 -> stringResource(R.string.modern_duration_minutes, rest)
+        else -> stringResource(R.string.modern_duration_hours_minutes, hours, rest)
     }
 }
 
