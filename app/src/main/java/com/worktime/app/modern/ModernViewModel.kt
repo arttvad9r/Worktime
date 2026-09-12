@@ -30,6 +30,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         val rateMinor: Long,
         val bonusMinor: Long,
         val penaltyMinor: Long,
+        val otherMinor: Long,
         val note: String,
         val exists: Boolean,
     )
@@ -91,6 +92,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
                     rateMinor = rate,
                     bonusMinor = existing?.bonusMinor ?: 0L,
                     penaltyMinor = existing?.penaltyMinor ?: 0L,
+                    otherMinor = existing?.otherMinor ?: 0L,
                     note = existing?.note.orEmpty(),
                     exists = existing != null,
                 )
@@ -106,6 +108,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         rateMinor: Long,
         bonusMinor: Long,
         penaltyMinor: Long,
+        otherMinor: Long,
         note: String,
     ) {
         val current = _editor.value ?: return
@@ -118,6 +121,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
                         hourlyRateMinor = rateMinor,
                         bonusMinor = bonusMinor,
                         penaltyMinor = penaltyMinor,
+                        otherMinor = otherMinor,
                         note = note.trim(),
                     ),
                 )
