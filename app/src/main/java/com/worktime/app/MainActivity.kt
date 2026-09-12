@@ -11,6 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.room.Room
 import com.worktime.app.modern.ModernViewModel
+import com.worktime.app.modern.data.MIGRATION_1_2
 import com.worktime.app.modern.data.ModernDatabase
 import com.worktime.app.modern.data.ModernRepository
 import com.worktime.app.modern.ui.ModernWorkTimeApp
@@ -22,7 +23,8 @@ class MainActivity : ComponentActivity() {
             applicationContext,
             ModernDatabase::class.java,
             "worktime-modern.db",
-        ).build()
+        ).addMigrations(MIGRATION_1_2)
+            .build()
     }
 
     private val modernRepository: ModernRepository by lazy {
