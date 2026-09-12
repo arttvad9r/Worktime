@@ -45,6 +45,7 @@ class WorkTimeJourneys(
         YearMonth.now()
             .plusMonths(1)
             .format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
+            .replaceFirstChar { if (it.isLowerCase()) it.titlecase(locale) else it.toString() }
     }
 
     fun launchCalendar(scope: MacrobenchmarkScope) = with(scope) {
@@ -61,7 +62,6 @@ class WorkTimeJourneys(
         uiAutomator {
             nextMonthIcon().nearestClickableAncestor().click()
 
-            // CalendarViewModel commits the new business month only after the pager settles.
             onElement {
                 textAsString() == expectedNextMonthTitle
             }
