@@ -48,6 +48,23 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         val affectedExistingEntries: Int,
     )
 
+    enum class ErrorKind {
+        OPEN_DAY,
+        SAVE_DAY,
+        DELETE_DAY,
+        SAVE_SETTING,
+        PREPARE_RATE_CHANGE,
+        APPLY_RATE_CHANGE,
+        CREATE_BACKUP,
+        INVALID_BACKUP,
+        RESTORE_BACKUP,
+    }
+
+    sealed interface ErrorState {
+        data class Known(val kind: ErrorKind) : ErrorState
+        data class Message(val text: String) : ErrorState
+    }
+
     private val _selectedMonth = MutableStateFlow(YearMonth.now())
     val selectedMonth: StateFlow<YearMonth> = _selectedMonth.asStateFlow()
 
@@ -77,8 +94,8 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
     private val _pendingRateChange = MutableStateFlow<PendingRateChange?>(null)
     val pendingRateChange: StateFlow<PendingRateChange?> = _pendingRateChange.asStateFlow()
 
-    private val _lastError = MutableStateFlow<String?>(null)
-    val lastError: StateFlow<String?> = _lastError.asStateFlow()
+    private val _lastError = MutableStateFlow<ErrorState?>(null)
+    val lastError: StateFlow<ErrorState?> = _lastError.asStateFlow()
 
     fun previousMonth() = selectMonth(_selectedMonth.value.minusMonths(1))
     fun nextMonth() = selectMonth(_selectedMonth.value.plusMonths(1))
@@ -108,7 +125,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
                     exists = existing != null,
                 )
             }.onSuccess { _editor.value = it }
-                .onFailure { reportError(it.message ?: "Не удалось открыть день") }
+                .onFailure { reportError(ErrorKind.OPEN_DAY) }
         }
     }
 
@@ -137,7 +154,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
                     ),
                 )
             }.onSuccess { _editor.value = null }
-                .onFailure { reportError(it.message ?: "Не удалось сохранить день") }
+                .onFailure { reportError(ErrorKind.SAVE_DAY) }
         }
     }
 
@@ -146,28 +163,28 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         viewModelScope.launch {
             runCatching { repository.deleteDay(current.date) }
                 .onSuccess { _editor.value = null }
-                .onFailure { reportError(it.message ?: "Не удалось удалить день") }
+                .onFailure { reportError(ErrorKind.DELETE_DAY) }
         }
     }
 
     fun setDefaultRate(rateMinor: Long) {
         viewModelScope.launch {
             runCatching { repository.updateSettings { it.copy(defaultRateMinor = rateMinor) } }
-                .onFailure { reportError(it.message ?: "Не удалось сохранить ставку") }
+                .onFailure { reportError(ErrorKind.SAVE_SETTING) }
         }
     }
 
     fun setCurrency(code: String) {
         viewModelScope.launch {
             runCatching { repository.updateSettings { it.copy(currencyCode = code) } }
-                .onFailure { reportError(it.message ?: "Не удалось изменить валюту") }
+                .onFailure { reportError(ErrorKind.SAVE_SETTING) }
         }
     }
 
     fun setTheme(mode: ThemeMode) {
         viewModelScope.launch {
             runCatching { repository.updateSettings { it.copy(themeMode = mode) } }
-                .onFailure { reportError(it.message ?: "Не удалось изменить тему") }
+                .onFailure { reportError(ErrorKind.SAVE_SETTING) }
         }
     }
 
@@ -187,7 +204,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
                     affectedExistingEntries = repository.countDays(start, endInclusive),
                 )
             }.onSuccess { _pendingRateChange.value = it }
-                .onFailure { reportError(it.message ?: "Не удалось подготовить изменение ставки") }
+                .onFailure { reportError(ErrorKind.PREPARE_RATE_CHANGE) }
         }
     }
 
@@ -198,7 +215,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         viewModelScope.launch {
             runCatching { repository.applyRate(pending.start, pending.endInclusive, pending.rateMinor) }
                 .onSuccess { _pendingRateChange.value = null }
-                .onFailure { reportError(it.message ?: "Не удалось изменить ставку") }
+                .onFailure { reportError(ErrorKind.APPLY_RATE_CHANGE) }
         }
     }
 
@@ -206,7 +223,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         viewModelScope.launch {
             runCatching { ModernBackupCodec.encode(repository.createBackup()) }
                 .onSuccess(onReady)
-                .onFailure { reportError(it.message ?: "Не удалось создать резервную копию") }
+                .onFailure { reportError(ErrorKind.CREATE_BACKUP) }
         }
     }
 
@@ -215,7 +232,7 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
             .onSuccess { payload ->
                 _pendingImport.value = ImportState(payload, ModernBackupCodec.preview(payload))
             }
-            .onFailure { reportError(it.message ?: "Некорректный файл резервной копии") }
+            .onFailure { reportError(ErrorKind.INVALID_BACKUP) }
     }
 
     fun cancelImport() { _pendingImport.value = null }
@@ -225,11 +242,12 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
         viewModelScope.launch {
             runCatching { repository.restoreBackup(staged.payload) }
                 .onSuccess { _pendingImport.value = null }
-                .onFailure { reportError(it.message ?: "Не удалось восстановить данные") }
+                .onFailure { reportError(ErrorKind.RESTORE_BACKUP) }
         }
     }
 
-    fun reportError(message: String) { _lastError.value = message }
+    fun reportError(kind: ErrorKind) { _lastError.value = ErrorState.Known(kind) }
+    fun reportError(message: String) { _lastError.value = ErrorState.Message(message) }
     fun consumeError() { _lastError.value = null }
 
     class Factory(private val repository: ModernRepository) : ViewModelProvider.Factory {
