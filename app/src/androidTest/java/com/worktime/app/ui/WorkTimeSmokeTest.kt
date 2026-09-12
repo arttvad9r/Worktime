@@ -21,7 +21,7 @@ class WorkTimeSmokeTest {
     val composeRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun modernCalendarStartsAndOpensSettings() {
+    fun modernCalendarStartsOpensSettingsAndReturnsWithSystemBack() {
         val activity = composeRule.activity
         val settings = activity.getString(R.string.settings)
         val locale = activity.resources.configuration.locales[0]
@@ -35,5 +35,11 @@ class WorkTimeSmokeTest {
         composeRule.onNodeWithContentDescription(settings).assertIsDisplayed()
         composeRule.onNodeWithContentDescription(settings).performClick()
         composeRule.onNodeWithText(settings).assertIsDisplayed()
+
+        composeRule.runOnUiThread {
+            composeRule.activity.onBackPressedDispatcher.onBackPressed()
+        }
+        composeRule.waitForIdle()
+        composeRule.onNodeWithContentDescription(todayDescription).assertIsDisplayed()
     }
 }
