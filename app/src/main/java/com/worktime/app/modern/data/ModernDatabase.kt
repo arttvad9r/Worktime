@@ -1,5 +1,6 @@
 package com.worktime.app.modern.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Database
 import androidx.room.Entity
@@ -9,6 +10,9 @@ import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
 import kotlinx.coroutines.flow.Flow
 
 @Entity(tableName = "modern_work_days")
@@ -18,7 +22,7 @@ data class WorkDayEntity(
     val hourlyRateMinor: Long,
     val bonusMinor: Long,
     val penaltyMinor: Long,
-    val otherMinor: Long,
+    @ColumnInfo(defaultValue = "0") val otherMinor: Long = 0L,
     val note: String,
 )
 
@@ -104,9 +108,17 @@ interface SettingsDao {
     suspend fun deleteAll()
 }
 
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            "ALTER TABLE modern_work_days ADD COLUMN otherMinor INTEGER NOT NULL DEFAULT 0",
+        )
+    }
+}
+
 @Database(
     entities = [WorkDayEntity::class, RatePeriodEntity::class, AppSettingsEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class ModernDatabase : RoomDatabase() {
