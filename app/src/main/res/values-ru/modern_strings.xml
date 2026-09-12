@@ -14,6 +14,10 @@
     <string name="modern_worked">Отработано</string>
     <string name="modern_hours">Часы</string>
     <string name="modern_minutes">Минуты</string>
+    <string name="modern_duration_zero">0 ч</string>
+    <string name="modern_duration_hours">%1$d ч</string>
+    <string name="modern_duration_minutes">%1$d мин</string>
+    <string name="modern_duration_hours_minutes">%1$d ч %2$d мин</string>
     <string name="modern_quick_hours">%1$d ч</string>
     <string name="modern_rate_per_hour">Ставка / час</string>
     <string name="modern_bonus">Премия</string>
@@ -22,6 +26,9 @@
     <string name="modern_note">Заметка</string>
     <string name="modern_delete">Удалить</string>
     <string name="modern_save">Сохранить</string>
+    <string name="modern_today_date">Сегодня, %1$s</string>
+    <string name="modern_day_a11y_empty">%1$s. Рабочей записи нет.</string>
+    <string name="modern_day_a11y_entry">%1$s. Отработано %2$s. Доход %3$s.</string>
 
     <string name="modern_rate_section">Ставка</string>
     <string name="modern_default_rate_per_hour">Стандартная ставка / час</string>
