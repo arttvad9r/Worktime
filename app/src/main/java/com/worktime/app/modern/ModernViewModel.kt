@@ -66,9 +66,9 @@ class ModernViewModel(private val repository: ModernRepository) : ViewModel() {
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError.asStateFlow()
 
-    fun previousMonth() { _selectedMonth.value = _selectedMonth.value.minusMonths(1) }
-    fun nextMonth() { _selectedMonth.value = _selectedMonth.value.plusMonths(1) }
-    fun currentMonth() { _selectedMonth.value = YearMonth.now() }
+    fun previousMonth() = selectMonth(_selectedMonth.value.minusMonths(1))
+    fun nextMonth() = selectMonth(_selectedMonth.value.plusMonths(1))
+    fun currentMonth() = selectMonth(YearMonth.now())
     fun selectMonth(month: YearMonth) {
         _selectedMonth.value = month
         _selectedYear.value = month.year
