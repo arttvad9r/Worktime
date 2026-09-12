@@ -3,6 +3,7 @@ package com.worktime.app.modern.backup
 import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
 import java.time.LocalDate
+import java.util.Currency
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -20,6 +21,7 @@ data class BackupWorkDay(
     val hourlyRateMinor: Long,
     val bonusMinor: Long,
     val penaltyMinor: Long,
+    val otherMinor: Long = 0L,
     val note: String,
 )
 
@@ -78,7 +80,7 @@ object ModernBackupCodec {
     private fun validate(payload: ModernBackupPayload) {
         require(payload.schemaVersion == SCHEMA_VERSION) { "Unsupported schemaVersion=${payload.schemaVersion}" }
         require(MoneyRules.isValid(payload.settings.defaultRateMinor))
-        require(payload.settings.currencyCode.matches(Regex("[A-Z]{3}")))
+        require(isCurrencyCodeValid(payload.settings.currencyCode))
         ThemeMode.valueOf(payload.settings.themeMode)
 
         require(payload.workDays.size <= MAX_WORK_DAYS) { "Too many work days" }
@@ -96,6 +98,7 @@ object ModernBackupCodec {
             require(MoneyRules.isValid(day.hourlyRateMinor))
             require(MoneyRules.isValid(day.bonusMinor))
             require(MoneyRules.isValid(day.penaltyMinor))
+            require(MoneyRules.isSignedAdjustmentValid(day.otherMinor))
             require(day.note.length <= 2_000)
         }
         payload.ratePeriods.forEach { period ->
@@ -106,6 +109,9 @@ object ModernBackupCodec {
             require(period.endEpochDay == null || period.endEpochDay >= period.startEpochDay)
         }
     }
+
+    private fun isCurrencyCodeValid(code: String): Boolean =
+        code.matches(Regex("[A-Z]{3}")) && runCatching { Currency.getInstance(code) }.isSuccess
 
     private fun validateEpochDay(epochDay: Long) {
         runCatching { LocalDate.ofEpochDay(epochDay) }
