@@ -55,8 +55,10 @@
     <string name="modern_error_restore_backup">Не удалось восстановить резервную копию. Текущие данные не изменены.</string>
     <string name="modern_month_rate_title">Ставка за %1$s</string>
     <string name="modern_apply">Применить</string>
-    <string name="modern_from_date">С даты, ДД.ММ.ГГГГ</string>
-    <string name="modern_to_date_open_ended">По дату (пусто = бессрочно)</string>
+    <string name="modern_from_date">С даты</string>
+    <string name="modern_to_date_open_ended">По дату</string>
+    <string name="modern_no_end_date">Бессрочно</string>
+    <string name="modern_clear_end_date">Сделать бессрочно</string>
     <string name="modern_rate_range_explainer">Существующие записи в диапазоне будут явно пересчитаны на новую ставку. Новые записи получат её автоматически.</string>
     <string name="modern_rate_confirm_title">Применить изменение ставки?</string>
     <string name="modern_rate_confirm_period">Период: %1$s — %2$s</string>
