@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.worktime.app.R
 import com.worktime.app.modern.ModernViewModel
+import com.worktime.app.modern.backup.ModernBackupCodec
 import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
 import java.time.LocalDate
@@ -88,7 +89,7 @@ fun SettingsScreen(
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             runCatching {
-                context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                context.contentResolver.openInputStream(uri)?.use(ModernBackupCodec::readUtf8Limited)
                     ?: kotlin.error(fileReadFailed)
             }.onSuccess(viewModel::stageImport)
                 .onFailure { viewModel.reportError(it.message ?: backupReadFailed) }
