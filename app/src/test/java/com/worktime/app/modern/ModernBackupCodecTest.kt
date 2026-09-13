@@ -5,6 +5,7 @@ import com.worktime.app.modern.backup.BackupSettings
 import com.worktime.app.modern.backup.BackupWorkDay
 import com.worktime.app.modern.backup.ModernBackupCodec
 import com.worktime.app.modern.backup.ModernBackupPayload
+import java.io.ByteArrayInputStream
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
@@ -63,5 +64,22 @@ class ModernBackupCodecTest {
     fun `unknown currency code is rejected`() {
         val json = """{"schemaVersion":1,"settings":{"defaultRateMinor":0,"currencyCode":"ZZZ","themeMode":"SYSTEM"},"workDays":[],"ratePeriods":[]}"""
         assertThrows(IllegalArgumentException::class.java) { ModernBackupCodec.decode(json) }
+    }
+
+    @Test
+    fun `oversized backup stream is rejected before decode`() {
+        val oversized = ByteArray(ModernBackupCodec.MAX_BACKUP_SIZE_BYTES + 1) { 'x'.code.toByte() }
+
+        assertThrows(IllegalArgumentException::class.java) {
+            ByteArrayInputStream(oversized).use(ModernBackupCodec::readUtf8Limited)
+        }
+    }
+
+    @Test
+    fun `bounded backup stream preserves utf8 text`() {
+        val expected = "{\"message\":\"смена\"}"
+        val input = ByteArrayInputStream(expected.toByteArray(Charsets.UTF_8))
+
+        assertEquals(expected, input.use(ModernBackupCodec::readUtf8Limited))
     }
 }
