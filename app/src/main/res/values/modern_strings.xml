@@ -55,8 +55,10 @@
     <string name="modern_error_restore_backup">Could not restore the backup. Current data was left unchanged.</string>
     <string name="modern_month_rate_title">Rate for %1$s</string>
     <string name="modern_apply">Apply</string>
-    <string name="modern_from_date">From date, DD.MM.YYYY</string>
-    <string name="modern_to_date_open_ended">Through date (empty = no end date)</string>
+    <string name="modern_from_date">From date</string>
+    <string name="modern_to_date_open_ended">Through date</string>
+    <string name="modern_no_end_date">No end date</string>
+    <string name="modern_clear_end_date">Clear end date</string>
     <string name="modern_rate_range_explainer">Existing entries in the range will explicitly receive the new rate. New entries will use it automatically.</string>
     <string name="modern_rate_confirm_title">Apply rate change?</string>
     <string name="modern_rate_confirm_period">Period: %1$s — %2$s</string>
