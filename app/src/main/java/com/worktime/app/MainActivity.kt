@@ -1,56 +1,36 @@
 package com.worktime.app
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import com.worktime.app.ui.WorkTimeApp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.worktime.app.modern.ModernAppGraph
+import com.worktime.app.modern.ModernViewModel
+import com.worktime.app.modern.ui.ModernWorkTimeApp
+import com.worktime.app.modern.ui.ModernWorkTimeTheme
 
 class MainActivity : ComponentActivity() {
-    private var openTodayRequest by mutableLongStateOf(0L)
+    private val appGraph: ModernAppGraph by lazy(LazyThreadSafetyMode.NONE) {
+        ModernAppGraph.get(applicationContext)
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
-
-        splashScreen.setOnExitAnimationListener { provider ->
-            provider.view.animate()
-                .alpha(0f)
-                .setDuration(160L)
-                .withEndAction { provider.remove() }
-                .start()
-        }
-
         enableEdgeToEdge()
-        consumeLaunchIntent(intent)
-        val container = (application as WorkTimeApplication).container
+
         setContent {
-            WorkTimeApp(
-                container = container,
-                openTodayRequest = openTodayRequest,
-            )
+            val factory = remember { ModernViewModel.Factory(appGraph.repository) }
+            val viewModel: ModernViewModel = viewModel(factory = factory)
+            val settings by viewModel.settings.collectAsStateWithLifecycle()
+            ModernWorkTimeTheme(themeMode = settings.themeMode) {
+                ModernWorkTimeApp(viewModel)
+            }
         }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        consumeLaunchIntent(intent)
-    }
-
-    private fun consumeLaunchIntent(intent: Intent) {
-        if (intent.getBooleanExtra(EXTRA_OPEN_TODAY, false)) {
-            intent.removeExtra(EXTRA_OPEN_TODAY)
-            openTodayRequest++
-        }
-    }
-
-    companion object {
-        const val EXTRA_OPEN_TODAY = "com.worktime.app.extra.OPEN_TODAY"
     }
 }

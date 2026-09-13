@@ -11,13 +11,11 @@ fi
 
 ./gradlew --no-daemon \
   :app:testDebugUnitTest \
-  :app:validateDebugScreenshotTest \
   :app:lintDebug \
   :app:lintRelease \
   :app:assembleDebug \
   :app:assembleDebugAndroidTest \
   :app:assembleRelease \
-  :app:assembleBenchmark \
-  :macrobenchmark:assembleBenchmark \
-  :baselineprofile:assemble \
   --stacktrace
+
+git diff --exit-code -- app/schemas/com.worktime.app.modern.data.ModernDatabase

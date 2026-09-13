@@ -1,100 +1,112 @@
-# Architecture
+# Architecture — 2026 rewrite
 
-## Layers
+## Runtime shape
+
+WorkTime is a single Android application module with a deliberately small dependency graph.
 
 ```text
-Compose UI -> screen/destination state holders -> domain contracts -> data implementations
-                                      |                |-> Room / DataStore
-                                      |                `-> JSON / CSV document codecs
-                                      `-> domain calculations / mutation coordination
+MainActivity
+  → ModernAppGraph (process-scoped, applicationContext)
+       ├─ Room ModernDatabase (worktime-modern.db)
+       └─ ModernRepository
+  → ModernViewModel
+       ↓ StateFlow / explicit actions
+     ModernWorkTimeApp
+       ↓ Navigation 3
+     Calendar / Month report / Year report / Settings
 ```
 
-- `domain` owns work-entry invariants, exact calculations, repository contracts, backup-document contracts and cross-store mutation coordination.
-- `data` implements Room/DataStore repositories and concrete JSON/CSV document serialization.
-- `ui` renders immutable state and sends explicit user actions back to the owning state holder.
-- `WorkTimeApp` is the composition root: it wires domain-facing contracts from `AppContainer` to ViewModel factories and owns app navigation/overlay composition.
-- Reusable composables receive state and callbacks instead of resolving repositories or ViewModels themselves.
+`ModernAppGraph` owns the process-lifetime Room database and repository so Activity recreation/resizing cannot create a new persistence graph underneath a surviving ViewModel. `MainActivity` remains the UI composition root and obtains the graph with `applicationContext`. There is no custom `Application`, Hilt/Koin container, generic repository framework or event bus.
 
-`BackupViewModel` depends on the domain-facing `BackupDocumentSerializer` port. `DefaultBackupDocumentSerializer` and the concrete `BackupCodec`/`WorkEntryCsv` formats remain in `data`; `AppContainer` is the only composition boundary that knows the implementation. Repository/static audit checks prevent production `ui` from importing `data`, `domain` from importing `ui`/`data`, and `data` from importing `ui`.
+## State
 
-The project intentionally stays a small single app module. A separate domain module or DI framework would add structure without reducing current complexity.
+`ModernViewModel` owns the small shared application state required across the four destinations:
 
-## State ownership
+- selected month and year;
+- observed month/year work-day collections;
+- day-editor state;
+- staged rate-change preview;
+- staged import preview;
+- recoverable UI error state.
 
-State is split by feature instead of being accumulated in one root ViewModel:
+Repository-backed streams are exposed as `StateFlow` and collected lifecycle-aware in Compose. Transient field input and panel expanded/collapsed state stay local to the relevant composable.
 
-- `CalendarViewModel` owns visible month, selected day, month-entry snapshots, bulk-rate UI state, recoverable calendar errors and the session-scoped Undo snapshot.
-- `PreferencesViewModel` owns theme/default-rate preference state and preference mutations.
-- `BackupViewModel` owns import/export state, confirmation, backup errors and rollback behavior.
-- `YearSummaryViewModel` is scoped to the Navigation 3 Year Summary destination and owns selected-year summary state.
+This rewrite currently uses one app-level ViewModel rather than reproducing the previous implementation's larger set of feature ViewModels. Split it only when state ownership or testing pressure provides a concrete reason.
 
-All repository-backed state exposed to Compose is collected lifecycle-aware. Calendar month and entries are emitted together, and `isReady` blocks editing until persisted state has emitted.
+## Navigation and layout
 
-Transient interaction state that does not belong in a ViewModel remains local to its screen. `CalendarPagerState` owns calendar pager position, spring interruption/velocity and gesture-settle bookkeeping; `YearSummaryPagerState` owns the equivalent year-pager interaction state. The selected business month/year still belongs to the corresponding ViewModel and is committed only after the pager settles.
+Navigation uses Navigation 3 with a saveable back stack and ViewModel/saveable-state entry decorators.
 
-## Navigation
+Destinations:
 
-The app uses Navigation 3 with a saveable back stack and destination-scoped ViewModel stores.
+1. Calendar — root.
+2. Month report.
+3. Year report.
+4. Settings.
 
-- Calendar is the root destination.
-- Settings is a peer full-screen destination.
-- Year Summary is a destination with its own state holder and vertical enter/exit motion.
-- Predictive pop uses the same structural exit motion as normal Back.
+System Back and predictive pop use the Navigation 3 stack. Transitions are short directional slide/fade animations.
 
-Navigation objects stay at the app root and are not injected into feature ViewModels.
+The root applies safe-drawing insets and limits content width to 720 dp. Phones request portrait orientation. The design must remain usable when Android ignores that request on large/resizable configurations; the six-week calendar means six logical rows, not a hard-coded pixel height.
 
-## Mutation serialization
+## Calendar UX
 
-`DataMutationCoordinator` serializes writes that can affect shared Room/DataStore state across Calendar, Preferences and Backup flows. This prevents concurrent feature mutations from interleaving during operations such as backup replacement.
+The calendar always renders 42 dates: seven columns by six rows, Monday-first. Adjacent-month dates remain visible but inactive. Each in-month cell can represent today, selected state, an empty date or a saved work day. Saved cells show duration and calculated total.
 
-Calendar Undo is intentionally process-local convenience state. Persisted repository changes survive process recreation; an in-memory Undo snapshot does not.
+The bottom monthly summary is compact by default and expands in place. From it the user opens the monthly report, then the yearly report. Selecting a month in the yearly report returns to that month's report.
 
 ## Persistence
 
-### Room
+Room is the single persisted source of truth.
 
-One row per date:
+### `modern_work_days`
 
-```text
-dateEpochDay, workedMinutes, hourlyRateMicros, bonusMicros, penaltyMicros, note
-```
+One aggregate record per date:
 
-The legacy `note` column is retained to avoid a destructive schema change. The compact UI does not expose notes and preserves an existing stored value when editing.
+- `epochDay` primary key;
+- `workedMinutes`;
+- hourly-rate snapshot in minor units;
+- bonus;
+- fine/penalty;
+- signed other adjustment;
+- optional note.
 
-### DataStore
+An empty record (zero duration, zero adjustments, blank note) is deleted instead of persisted.
 
-Current preferences:
+### `modern_rate_periods`
 
-- default hourly rate micros;
-- theme mode;
-- whether the first-entry default-rate adoption has already been decided.
+Stores explicit rate overrides with start date, optional inclusive end date and hourly rate. Newer overlapping periods win for dates without an existing work-day snapshot.
 
-An old stored currency key may remain on upgraded installations but is not read or written.
+Applying a bulk rate change is transactional: the period is stored and existing work-day snapshots inside that range are explicitly rewritten. Changing only the default rate does not rewrite saved history.
 
-### Backup documents
+### `modern_settings`
 
-The JSON backup and CSV export formats are infrastructure details in `data`. The UI layer sees only `BackupDocumentSerializer` plus domain models. Import bytes are bounded before decode, decoded data is validated before confirmation, and replacement remains coordinated with repository rollback behavior.
+Stores default hourly rate, ISO currency code and theme mode. Settings live in Room in this rewrite; there is no DataStore dependency.
 
-## Amount model
+## Money and time
 
-Amounts are stored as `Long` micros. The UI formats them with the fixed `₽`/`₽/h` presentation strings; there is no selectable currency or exchange-rate model.
+- money: `Long` minor currency units;
+- duration: integer minutes;
+- worked duration: `0..1440` minutes;
+- base earnings: half-up rounding of `rate × minutes / 60`;
+- totals: checked integer arithmetic;
+- business/data layers reject `Float` and `Double` through static audit.
 
-```text
-ratePay = roundHalfUp(workedMinutes x hourlyRateMicros / 60)
-entryTotal = ratePay + bonus - penalty
-monthTotal = sum(entryTotal)
-```
+Floating point is permitted only for presentation-only geometry such as the relative bar width in the yearly report. Monetary text parsing accepts plain decimal notation with comma or dot and deliberately rejects exponent notation.
 
-Parsing rejects malformed/exponent input. `MoneyLimits` bounds user-entered components; checked integer arithmetic protects overflow.
+## Backup and restore
 
-## UI surfaces
+Backup is versioned JSON and includes all data required to restore the rewrite:
 
-- `CalendarScreen`: adaptive calendar/report orchestration; pager interaction state is delegated to `CalendarPagerState`.
-- `CalendarGrid`, `CalendarChrome`, `CalendarSummary`: focused calendar rendering components.
-- `DayEditorSheet`: public sheet entry point; form, numeric fields and calculation summary are split into focused components.
-- `SettingsScreen`: default rate, theme and data operations driven by dedicated Preferences/Backup state holders.
-- `YearSummaryScreen`: view-only yearly statistics; destination state lives in `YearSummaryViewModel` and pager interaction state in `YearSummaryPagerState`.
-- `AppOverlays`, `AppOperationFeedback`, `AppNavigationMotion`: root-only overlay, feedback and motion concerns extracted from `WorkTimeApp`.
-- `MoneyFormatting` and `DurationFormatting`: presentation-boundary formatting only.
+- settings;
+- work days;
+- rate periods.
 
-Write failures keep the relevant editor/settings surface open where applicable and expose a generic localized error without logging personal values. Import is validated before confirmation and compensated across Room/DataStore: a failure after replacement attempts to restore both snapshots; rollback failure is reported separately.
+Decode validates schema version, sizes, duplicate keys/IDs, dates, money bounds, durations, currencies and theme values before the database is changed. Restore runs in a single Room transaction. File access uses Android's system document picker, so broad storage permission is not requested.
+
+## Database evolution
+
+`ModernDatabase` is currently schema version 2. The explicit `1 → 2` migration adds the signed `otherMinor` column with default zero and is covered by an instrumented migration test. Room's generated v2 schema is committed and CI checks it for drift. Destructive migration fallback is forbidden by static audit.
+
+## Legacy boundary
+
+The old runtime packages, old Room schema, old screenshot baselines, widget resources, benchmark modules and previous Baseline Profile are not in active source sets. They remain available in Git history for behavioral comparison only.

@@ -1,10 +1,9 @@
 plugins {
     id("com.android.application")
-    id("androidx.baselineprofile")
+    id("androidx.room")
     id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.kotlin.plugin.serialization")
     id("com.google.devtools.ksp")
-    id("com.android.compose.screenshot")
 }
 
 android {
@@ -25,8 +24,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    experimentalProperties["android.experimental.enableScreenshotTest"] = true
 
     val releaseStoreFile = providers.gradleProperty("releaseStoreFile").orNull
         ?: System.getenv("RELEASE_STORE_FILE")
@@ -53,48 +50,16 @@ android {
 
     buildTypes {
         getByName("debug") {
-            // Keep development/instrumentation installs isolated from the real app package.
-            // connectedDebugAndroidTest may uninstall its tested APK during cleanup, so a
-            // dedicated application id prevents a physical QA run from deleting user data.
             applicationIdSuffix = ".debug"
             versionNameSuffix = "-debug"
         }
 
         release {
-            // Production signing is opt-in through RELEASE_* properties/env vars.
-            // Without them Gradle produces an unsigned release artifact, never a
-            // misleading debug-signed production build.
             signingConfig = signingConfigs.findByName("production")
-
-            // AGP 9.3 optimization DSL enables R8 code optimization and optimized
-            // resource shrinking together for the release variant.
             optimization {
                 enable = true
             }
             proguardFiles("proguard-rules.pro")
-        }
-
-        create("nonMinifiedRelease") {
-            // Baseline Profile capture must preserve source-level class and method names.
-            // With AGP 9.x, disable the new optimization DSL explicitly in addition to
-            // the Baseline Profile plugin's non-minified variant overrides.
-            initWith(getByName("release"))
-            signingConfig = signingConfigs.getByName("debug")
-            optimization {
-                enable = false
-            }
-            matchingFallbacks += listOf("release")
-        }
-
-        create("benchmark") {
-            // Macrobenchmark must measure release-like code without touching the installed
-            // production package on a physical QA device. The benchmark application id is
-            // disposable and independently debug-signed.
-            initWith(getByName("release"))
-            applicationIdSuffix = ".benchmark"
-            versionNameSuffix = "-benchmark"
-            signingConfig = signingConfigs.getByName("debug")
-            matchingFallbacks += listOf("release")
         }
     }
 
@@ -121,18 +86,15 @@ android {
     }
 }
 
-ksp {
-    arg("room.schemaLocation", "$projectDir/schemas")
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
     val composeBom = platform(libs.compose.bom)
 
-    baselineProfile(project(":baselineprofile"))
-
     implementation(composeBom)
     androidTestImplementation(composeBom)
-    screenshotTestImplementation(composeBom)
 
     implementation(libs.activity.compose)
     implementation(libs.lifecycle.viewmodel.compose)
@@ -143,27 +105,21 @@ dependencies {
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui.tooling.preview)
     implementation(libs.compose.material3)
-    implementation(libs.compose.material3.adaptive)
-    implementation(libs.compose.material3.adaptive.layout)
     implementation(libs.compose.material.icons.core)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.splashscreen)
-    implementation(libs.androidx.profileinstaller)
 
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    implementation(libs.datastore.preferences)
     implementation(libs.coroutines.android)
 
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
-
-    screenshotTestImplementation(libs.compose.screenshot.validation.api)
-    screenshotTestImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
