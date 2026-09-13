@@ -2,6 +2,8 @@ package com.worktime.app.modern.backup
 
 import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.time.LocalDate
 import java.util.Currency
 import kotlinx.serialization.Serializable
@@ -49,6 +51,8 @@ data class BackupPreview(
 )
 
 object ModernBackupCodec {
+    const val MAX_BACKUP_SIZE_BYTES = 4 * 1024 * 1024
+
     private const val SCHEMA_VERSION = 1
     private const val MAX_WORK_DAYS = 100_000
     private const val MAX_RATE_PERIODS = 100_000
@@ -61,13 +65,34 @@ object ModernBackupCodec {
 
     fun encode(payload: ModernBackupPayload): String {
         validate(payload)
-        return json.encodeToString(ModernBackupPayload.serializer(), payload)
+        val encoded = json.encodeToString(ModernBackupPayload.serializer(), payload)
+        require(encoded.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_SIZE_BYTES) {
+            "Backup is too large"
+        }
+        return encoded
     }
 
     fun decode(text: String): ModernBackupPayload {
+        require(text.toByteArray(Charsets.UTF_8).size <= MAX_BACKUP_SIZE_BYTES) {
+            "Backup is too large"
+        }
         val payload = json.decodeFromString(ModernBackupPayload.serializer(), text)
         validate(payload)
         return payload
+    }
+
+    fun readUtf8Limited(input: InputStream): String {
+        val output = ByteArrayOutputStream(minOf(MAX_BACKUP_SIZE_BYTES, 64 * 1024))
+        val buffer = ByteArray(8 * 1024)
+        var total = 0
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            total += read
+            require(total <= MAX_BACKUP_SIZE_BYTES) { "Backup is too large" }
+            output.write(buffer, 0, read)
+        }
+        return output.toByteArray().toString(Charsets.UTF_8)
     }
 
     fun preview(payload: ModernBackupPayload): BackupPreview = BackupPreview(
