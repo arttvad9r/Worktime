@@ -1,5 +1,7 @@
 package com.worktime.app.modern.ui
 
+import android.app.DatePickerDialog
+import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -48,11 +51,9 @@ import com.worktime.app.modern.model.MoneyRules
 import com.worktime.app.modern.model.ThemeMode
 import java.time.LocalDate
 import java.time.YearMonth
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.ResolverStyle
-
-private val dateFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("dd.MM.uuuu").withResolverStyle(ResolverStyle.STRICT)
+import java.time.format.FormatStyle
 
 @Composable
 fun SettingsScreen(
@@ -64,6 +65,10 @@ fun SettingsScreen(
     val pendingImport by viewModel.pendingImport.collectAsStateWithLifecycle()
     val pendingRateChange by viewModel.pendingRateChange.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val displayDateFormatter = remember(locale) {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+    }
     var defaultRateInput by remember(settings.defaultRateMinor) { mutableStateOf(moneyInput(settings.defaultRateMinor)) }
     var showMonthRate by remember { mutableStateOf(false) }
     var showRangeRate by remember { mutableStateOf(false) }
@@ -243,8 +248,8 @@ fun SettingsScreen(
             title = { Text(stringResource(R.string.modern_rate_confirm_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    val startText = staged.start.format(dateFormatter)
-                    val endText = staged.endInclusive?.format(dateFormatter)
+                    val startText = staged.start.format(displayDateFormatter)
+                    val endText = staged.endInclusive?.format(displayDateFormatter)
                     Text(
                         if (endText == null) {
                             stringResource(R.string.modern_rate_confirm_open_period, startText)
@@ -351,15 +356,16 @@ private fun RangeRateDialog(
     onDismiss: () -> Unit,
     onApply: (LocalDate, LocalDate?, Long) -> Unit,
 ) {
-    var startText by remember { mutableStateOf(LocalDate.now().format(dateFormatter)) }
-    var endText by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val displayDateFormatter = remember(locale) {
+        DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+    }
+    var start by remember { mutableStateOf(LocalDate.now()) }
+    var end by remember { mutableStateOf<LocalDate?>(null) }
     var rateText by remember { mutableStateOf("") }
-    val start = runCatching { LocalDate.parse(startText, dateFormatter) }.getOrNull()
-    val end = endText.takeIf(String::isNotBlank)?.let { runCatching { LocalDate.parse(it, dateFormatter) }.getOrNull() }
     val rate = parseMoneyMinor(rateText)
-    val endValid = endText.isBlank() || end != null
     val rateValid = rate != null && MoneyRules.isValid(rate)
-    val valid = start != null && endValid && (end == null || !end.isBefore(start)) && rateValid
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -369,20 +375,33 @@ private fun RangeRateDialog(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                OutlinedTextField(
-                    value = startText,
-                    onValueChange = { startText = it },
-                    label = { Text(stringResource(R.string.modern_from_date)) },
-                    singleLine = true,
-                    isError = start == null,
+                DateSelectionButton(
+                    label = stringResource(R.string.modern_from_date),
+                    value = start.format(displayDateFormatter),
+                    onClick = {
+                        showDatePicker(context, start) { selected ->
+                            start = selected
+                            if (end?.isBefore(selected) == true) end = null
+                        }
+                    },
                 )
-                OutlinedTextField(
-                    value = endText,
-                    onValueChange = { endText = it },
-                    label = { Text(stringResource(R.string.modern_to_date_open_ended)) },
-                    singleLine = true,
-                    isError = !endValid,
+                DateSelectionButton(
+                    label = stringResource(R.string.modern_to_date_open_ended),
+                    value = end?.format(displayDateFormatter) ?: stringResource(R.string.modern_no_end_date),
+                    onClick = {
+                        showDatePicker(
+                            context = context,
+                            initial = end ?: start,
+                            minDate = start,
+                            onSelected = { end = it },
+                        )
+                    },
                 )
+                if (end != null) {
+                    TextButton(onClick = { end = null }) {
+                        Text(stringResource(R.string.modern_clear_end_date))
+                    }
+                }
                 OutlinedTextField(
                     value = rateText,
                     onValueChange = { rateText = it },
@@ -401,13 +420,55 @@ private fun RangeRateDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val validStart = start ?: return@TextButton
                     val validRate = rate?.takeIf(MoneyRules::isValid) ?: return@TextButton
-                    onApply(validStart, end, validRate)
+                    onApply(start, end, validRate)
                 },
-                enabled = valid,
+                enabled = rateValid,
             ) { Text(stringResource(R.string.modern_apply)) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } },
     )
+}
+
+@Composable
+private fun DateSelectionButton(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(text = value, style = MaterialTheme.typography.bodyLarge)
+        }
+    }
+}
+
+private fun showDatePicker(
+    context: Context,
+    initial: LocalDate,
+    minDate: LocalDate? = null,
+    onSelected: (LocalDate) -> Unit,
+) {
+    DatePickerDialog(
+        context,
+        { _, year, month, day -> onSelected(LocalDate.of(year, month + 1, day)) },
+        initial.year,
+        initial.monthValue - 1,
+        initial.dayOfMonth,
+    ).apply {
+        minDate?.let { minimum ->
+            datePicker.minDate = minimum
+                .atStartOfDay(ZoneId.systemDefault())
+                .toInstant()
+                .toEpochMilli()
+        }
+    }.show()
 }
