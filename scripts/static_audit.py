@@ -177,6 +177,15 @@ for source_root in money_roots:
 backup_codec = read(modern_root / "backup/ModernBackupCodec.kt")
 if "schemaVersion" not in backup_codec or "Unsupported schemaVersion" not in backup_codec:
     fail("Backup format must be versioned and reject unsupported versions")
+for expected in ("MAX_BACKUP_SIZE_BYTES", "readUtf8Limited"):
+    if expected not in backup_codec:
+        fail(f"Backup size invariant missing: {expected}")
+
+settings_screen = read(modern_root / "ui/SettingsScreen.kt")
+if "ModernBackupCodec::readUtf8Limited" not in settings_screen:
+    fail("Backup import must bound the selected input stream before JSON decode")
+if ".bufferedReader()?.use { it.readText() }" in settings_screen:
+    fail("Unbounded backup readText() import path returned")
 
 repository = read(modern_root / "data/ModernRepository.kt")
 if "withTransaction" not in repository or "restoreBackup" not in repository:
