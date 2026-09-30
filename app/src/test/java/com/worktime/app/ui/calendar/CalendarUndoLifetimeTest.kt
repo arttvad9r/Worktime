@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 class CalendarUndoLifetimeTest {
     @Test
     fun `new view model after deletion does not inherit in-memory undo`() = runTest {
-        val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000L)
+        val entry = WorkEntry(LocalDate.now().withDayOfMonth(10), 480, 10_000_000L)
         val repository = RecreatedProcessWorkEntryRepository(listOf(entry))
         val preferences = RecreatedProcessPreferencesRepository()
 

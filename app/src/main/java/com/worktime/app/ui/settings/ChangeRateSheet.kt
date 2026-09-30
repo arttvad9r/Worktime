@@ -26,12 +26,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.worktime.app.R
@@ -62,6 +64,7 @@ fun ChangeRateSheet(
     operationErrorMessage: String?,
     onDismiss: () -> Unit,
     onChangeRate: (LocalDate, LocalDate, Long) -> Unit,
+    countAffectedEntries: suspend (LocalDate, LocalDate) -> Int,
 ) {
     var period by rememberSaveable(initialRange) {
         mutableStateOf(if (initialRange != null) RatePeriod.CUSTOM else RatePeriod.CURRENT_MONTH)
@@ -224,12 +227,31 @@ fun ChangeRateSheet(
     }
 
     if (confirmChange) {
+        val affectedCount by produceState<Int?>(null, startDate, endDate) {
+            value = if (startDate != null && endDate != null) {
+                countAffectedEntries(startDate, endDate)
+            } else {
+                0
+            }
+        }
         AlertDialog(
             onDismissRequest = { confirmChange = false },
             title = { Text(stringResource(R.string.change_rate_confirmation_title)) },
-            text = { Text(stringResource(R.string.change_rate_confirmation_text)) },
+            text = {
+                val count = affectedCount
+                Text(
+                    if (count == null) {
+                        ""
+                    } else if (count == 0) {
+                        stringResource(R.string.no_entries_in_period)
+                    } else {
+                        pluralStringResource(R.plurals.change_rate_confirmation_text, count, count)
+                    },
+                )
+            },
             confirmButton = {
                 TextButton(
+                    enabled = (affectedCount ?: 0) > 0,
                     onClick = {
                         confirmChange = false
                         val start = startDate

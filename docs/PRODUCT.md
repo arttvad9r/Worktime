@@ -8,62 +8,41 @@ It is a salary calendar, not a project tracker, shift planner, timer, HR system 
 
 ## Primary flow
 
-1. Open the required month.
-2. Tap a current-month date, or use `Fill today` when it is relevant.
+1. Open the required month (arrows, swipe or month picker).
+2. Tap a date; today's empty cell shows a `+`.
 3. Enter duration and hourly rate.
 4. Optionally add a bonus and/or penalty.
 5. Review the calculation and save.
-6. Read the compact monthly summary or open the detailed month report.
-7. Open the yearly summary from the month report when a broader view is needed.
+6. Read the monthly report card under the calendar.
+7. Tap the card to open the yearly summary.
 
 ## Calendar
 
-- Monday-first fixed 6 × 7 layout.
-- Previous/next arrows, horizontal pager gesture and a month-picker dialog provide navigation.
-- The calendar follows the finger while paging; arrows animate the same pager and adjacent month data is preloaded from the repository window.
+- Monday-first fixed 6 × 7 grid that fills the available height; no grid lines.
+- Previous/next arrows, a horizontal pager and a month-picker dialog provide navigation. The ViewModel's `visibleMonth` is the single source of truth.
 - Adjacent-month dates remain visible but faint and inactive.
-- Filled cells show date, worked duration and daily income. Duration is the strongest datum; income is a restrained accent.
-- Filled cells use a neutral elevated surface rather than a second decorative primary fill.
-- Selected day and today have distinct states; their visual state changes interpolate briefly rather than flashing.
-- New or changed saved data gets a restrained content transition in the affected cell.
-- Grid geometry does not depend on entries or report state.
-- In the current month, `Fill today` appears only while today's entry is missing and uses a short enter/exit transition.
-- Layout is derived from the available app window. Compact windows keep the summary/report below the calendar; wider windows can expose the month report as a supporting pane. Rotation, split-screen and resizing must not require an orientation lock.
+- Filled cells show date, worked duration and daily income (hidden at large font scales) on a soft neutral surface; today has an outline; bonus/penalty days carry a small green/red dot.
+- Each month page is built once as an immutable `CalendarMonthUi`; cells do no calculation.
+- Compact-height windows scroll instead of squeezing the grid. Rotation, split-screen and resizing must not require an orientation lock.
 
 ## Day editor
 
-- Modal bottom sheet with one persistent numeric editor/input session shared by duration, rate, bonus and penalty logical fields.
-- The persistent editor moves between its fixed rows with a non-bouncy spring while keeping the same focusable node and IME session.
-- Duration accepts compact hour/minute input and starts empty with a `00:00` hint for a new day.
-- Hourly rate is a separate row.
-- Hidden bonus and penalty rows use an Add affordance; Add/value states fade through rather than hard-swapping.
-- Leaving an empty optional adjustment field collapses it back to the Add row.
-- Calculation shows pay by rate, optional adjustments and total.
-- Save is the primary action; existing entries can be deleted.
-- Invalid numeric values use outline-only error treatment; helper text is intentionally absent.
-- Persistence errors do not resize the sheet.
+- Modal bottom sheet with four ordinary text fields: duration, rate, bonus and penalty (bonus and penalty share a row).
+- The keyboard stays closed on open (no focus until a field is tapped); IME Next moves through the fields, Done on penalty saves.
+- Duration accepts `H`, `H:MM` or `HH:MM` up to 24:00; empty means zero.
+- Under the duration field up to four one-tap chips suggest durations: the most frequent one for this weekday in the last 180 days, then the most frequent overall, then defaults (8, 12, 10, 6 h). With a 13 h weekday / 15 h Fri–Sat habit the chips read `8 | 12 | 13 | 15` on any day.
+- Calculation shows pay by rate, optional adjustments and total; Save is primary and existing entries can be deleted.
+- Invalid values use outline-only error treatment; helper text is intentionally absent.
 
 ## Monthly information
 
-The calendar footer is one compact summary strip containing shifts, worked hours and monthly income. Tapping/dragging it opens the detailed month report. Summary values fade through briefly when they change, the strip has restrained pressed feedback, and its chevron follows the open/closed report state without changing geometry.
-
-The month report is view-only and shows:
-
-- month and primary total income;
-- shift count and worked hours;
-- pay by hourly rate;
-- bonus/penalty when non-zero;
-- average shift duration;
-- average income per shift;
-- navigation to the yearly summary.
+A card under the calendar shows the month's income, shift count and worked hours, plus base/bonus/penalty when adjustments exist. Every record's pay is rounded to cents and totals are sums of rounded records, so the cell, card and yearly numbers always agree. Tapping the card opens the yearly summary.
 
 ## Year summary
 
-The yearly summary is a full-screen, view-only surface opened from the monthly report.
+The yearly summary is a full-screen, view-only surface opened from the monthly report card.
 
-It shows total yearly income, work days, hours, averages and bonus/penalty totals when applicable. A compact month breakdown keeps the column labels (`shifts · h`, `income`) on the same header line as `By month`. Populated months are emphasized; missing months are muted. Empty years stay compact rather than stretching meaningless rows across the screen.
-
-Year summary enters upward from the bottom report and exits downward. Moving between years uses a restrained lateral transition in the direction of time while the previous year remains visible until the next dataset is ready. Settings remains a horizontal hierarchy transition.
+It shows total yearly income, shifts and hours, the average per month with data, and bonus/penalty totals when applicable. Each populated month is one row with a proportional bar (red for a negative month); months without records are collapsed into a single muted line. Arrows switch the year with a short cross-fade.
 
 ## Settings
 

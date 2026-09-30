@@ -1,6 +1,8 @@
 package com.worktime.app.ui.yearsummary
 
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -8,69 +10,49 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.window.core.layout.WindowSizeClass.Companion.HEIGHT_DP_MEDIUM_LOWER_BOUND
 import com.worktime.app.R
 import com.worktime.app.ui.components.AppDimens
 import com.worktime.app.ui.components.AppMotion
 import com.worktime.app.ui.components.AppTopBar
 import com.worktime.app.ui.format.formatAmountMicros
 import com.worktime.app.ui.format.formatDurationCompact
+import com.worktime.app.ui.theme.semanticColors
 import java.time.Month
+import java.util.Locale
+import kotlin.math.abs
 import java.time.format.TextStyle as JavaTextStyle
 
-private const val MonthLabelWeight = 1.2f
-private const val MonthDetailWeight = 1.2f
-private const val MonthAmountWeight = 0.9f
-private val ShortViewportMonthRowMinHeight = 32.dp
+private val MonthLabelWidth = 44.dp
+private val AmountColumnWidth = 96.dp
+private val BarHeight = 8.dp
 
-internal enum class YearSummaryLayoutMode {
-    FixedViewport,
-    CompactShort,
-}
-
-internal fun yearSummaryLayoutMode(isHeightAtLeastMedium: Boolean): YearSummaryLayoutMode =
-    if (isHeightAtLeastMedium) {
-        YearSummaryLayoutMode.FixedViewport
-    } else {
-        YearSummaryLayoutMode.CompactShort
-    }
-
-@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @Composable
 fun YearSummaryScreen(
     selectedYear: Int,
@@ -79,28 +61,6 @@ fun YearSummaryScreen(
     onSelectYear: (Int) -> Unit,
 ) {
     val locale = LocalLocale.current.platformLocale
-    val scope = rememberCoroutineScope()
-    val adaptiveInfo = currentWindowAdaptiveInfoV2()
-    val layoutMode = yearSummaryLayoutMode(
-        isHeightAtLeastMedium = adaptiveInfo.windowSizeClass.isHeightAtLeastBreakpoint(
-            HEIGHT_DP_MEDIUM_LOWER_BOUND,
-        ),
-    )
-    val pager = rememberYearSummaryPagerState(selectedYear)
-    val pagerFlingBehavior = PagerDefaults.flingBehavior(
-        state = pager.pagerState,
-        snapAnimationSpec = spring(
-            dampingRatio = AppMotion.NoBounceDampingRatio,
-            stiffness = YearSummaryPagerStiffness,
-        ),
-        snapPositionalThreshold = 0.25f,
-    )
-    YearSummaryPagerEffects(
-        pager = pager,
-        selectedYear = selectedYear,
-        scope = scope,
-        onSelectYear = onSelectYear,
-    )
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -115,67 +75,58 @@ fun YearSummaryScreen(
                 title = stringResource(R.string.year_summary),
                 onBack = onDismiss,
             )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(AppDimens.rowMinHeight),
-                contentAlignment = Alignment.Center,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(
-                        onClick = { pager.navigatePrevious(scope) },
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                            contentDescription = stringResource(R.string.previous_year),
-                        )
-                    }
-                    Text(
-                        text = pager.displayedYear.toString(),
-                        modifier = Modifier.padding(horizontal = 12.dp),
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
-                    IconButton(
-                        onClick = { pager.navigateNext(scope) },
-                    ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.next_year),
-                        )
-                    }
+            YearSwitcher(
+                year = selectedYear,
+                onPrevious = { onSelectYear(selectedYear - 1) },
+                onNext = { onSelectYear(selectedYear + 1) },
+            )
+            Crossfade(
+                targetState = summaries[selectedYear],
+                modifier = Modifier.fillMaxSize(),
+                animationSpec = tween(AppMotion.StandardMillis),
+                label = "year-summary",
+            ) { summary ->
+                if (summary != null) {
+                    YearSummaryContent(summary = summary, locale = locale)
                 }
             }
+        }
+    }
+}
 
-            HorizontalPager(
-                state = pager.pagerState,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .testTag("year-summary-pager"),
-                beyondViewportPageCount = 1,
-                flingBehavior = pagerFlingBehavior,
-                key = { page -> pager.yearForPage(page) },
-            ) { page ->
-                val pageYear = pager.yearForPage(page)
-                val summary = summaries[pageYear]
-                if (summary == null) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    YearSummaryContent(
-                        summary = summary,
-                        locale = locale,
-                        layoutMode = layoutMode,
-                    )
-                }
-            }
+@Composable
+private fun YearSwitcher(
+    year: Int,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(AppDimens.rowMinHeight),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        IconButton(onClick = onPrevious) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = stringResource(R.string.previous_year),
+            )
+        }
+        Text(
+            text = year.toString(),
+            modifier = Modifier
+                .width(96.dp)
+                .testTag("year-summary-year"),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Medium,
+        )
+        IconButton(onClick = onNext) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = stringResource(R.string.next_year),
+            )
         }
     }
 }
@@ -183,258 +134,151 @@ fun YearSummaryScreen(
 @Composable
 private fun YearSummaryContent(
     summary: YearSummary,
-    locale: java.util.Locale,
-    layoutMode: YearSummaryLayoutMode,
+    locale: Locale,
 ) {
-    val compactText = LocalDensity.current.fontScale >= 1.4f
-    val scrollState = rememberScrollState()
-    val metricStyle = if (compactText) {
-        MaterialTheme.typography.bodySmall
-    } else {
-        MaterialTheme.typography.bodyMedium
-    }
-    val monthStyle = if (compactText) {
-        MaterialTheme.typography.bodySmall
-    } else {
-        MaterialTheme.typography.bodyMedium
-    }
-    val scrollModifier = if (layoutMode == YearSummaryLayoutMode.CompactShort) {
-        Modifier.verticalScroll(scrollState)
-    } else {
-        Modifier
-    }
+    val colors = MaterialTheme.colorScheme
+    val semantic = MaterialTheme.semanticColors
+    val total = summary.total
+    val maxAbs = summary.months.maxOfOrNull { abs(it.totalPayMicros) } ?: 0L
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = AppDimens.screenHorizontalPadding)
             .navigationBarsPadding()
-            .padding(bottom = AppDimens.rowGap)
-            .then(scrollModifier)
+            .padding(bottom = 16.dp)
             .testTag("year-summary-content"),
-        verticalArrangement = Arrangement.spacedBy(0.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {
-        YearMetricRow(
-            label = stringResource(R.string.year_income),
-            value = stringResource(
-                R.string.amount_with_currency,
-                formatAmountMicros(summary.total.totalPayMicros, locale),
-            ),
-            style = metricStyle,
-            valueColor = if (summary.total.totalPayMicros < 0L) {
-                MaterialTheme.colorScheme.error
-            } else {
-                MaterialTheme.colorScheme.onSurface
-            },
-            emphasized = true,
-        )
-        YearMetricRow(
-            label = stringResource(R.string.shift_count_label),
-            value = summary.total.shiftCount.toString(),
-            style = metricStyle,
-        )
-        YearMetricRow(
-            label = stringResource(R.string.worked_duration),
-            value = formatDurationCompact(summary.total.workedMinutes),
-            style = metricStyle,
-        )
-        if (summary.monthsWithData > 0) {
-            YearMetricRow(
-                label = stringResource(R.string.average_working_month),
-                value = formatAmountMicros(
-                    summary.total.totalPayMicros / summary.monthsWithData,
-                    locale,
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = stringResource(
+                    R.string.amount_with_currency,
+                    formatAmountMicros(total.totalPayMicros, locale),
                 ),
-                style = metricStyle,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (total.totalPayMicros < 0L) colors.error else colors.onSurface,
+                maxLines = 1,
             )
-            if (summary.total.shiftCount > 0) {
-                YearMetricRow(
-                    label = stringResource(R.string.average_shift),
-                    value = formatDurationCompact(
-                        summary.total.workedMinutes / summary.total.shiftCount,
+            Text(
+                text = "${pluralStringResource(R.plurals.shifts_short, total.shiftCount, total.shiftCount)} · " +
+                    stringResource(R.string.hours_short, formatDurationCompact(total.workedMinutes)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant,
+            )
+            if (summary.monthsWithData > 1) {
+                Text(
+                    text = stringResource(
+                        R.string.year_average_month,
+                        formatAmountMicros(total.totalPayMicros / summary.monthsWithData, locale),
                     ),
-                    style = metricStyle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.onSurfaceVariant,
                 )
             }
-        }
-        if (summary.total.bonusMicros > 0L) {
-            YearMetricRow(
-                label = stringResource(R.string.year_bonuses),
-                value = "+${formatAmountMicros(summary.total.bonusMicros, locale)}",
-                style = metricStyle,
-            )
-        }
-        if (summary.total.penaltyMicros > 0L) {
-            YearMetricRow(
-                label = stringResource(R.string.calculation_penalty),
-                value = "−${formatAmountMicros(summary.total.penaltyMicros, locale)}",
-                style = metricStyle,
-            )
+            if (total.bonusMicros > 0L || total.penaltyMicros > 0L) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    if (total.bonusMicros > 0L) {
+                        Text(
+                            text = "+${formatAmountMicros(total.bonusMicros, locale)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = semantic.positive,
+                        )
+                    }
+                    if (total.penaltyMicros > 0L) {
+                        Text(
+                            text = "−${formatAmountMicros(total.penaltyMicros, locale)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = semantic.negative,
+                        )
+                    }
+                }
+            }
         }
 
-        HorizontalDivider(
-            modifier = Modifier.padding(top = 4.dp, bottom = 2.dp),
-            color = MaterialTheme.colorScheme.outlineVariant,
-        )
-        MonthSectionHeader(compactText = compactText)
-
-        Column(
-            modifier = if (layoutMode == YearSummaryLayoutMode.FixedViewport) {
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .testTag("year-summary-months")
-            } else {
-                Modifier
-                    .fillMaxWidth()
-                    .testTag("year-summary-months")
-            },
-        ) {
+        val emptyMonths = Month.entries.filterIndexed { index, _ ->
+            !summary.monthHasData.getOrElse(index) { false }
+        }
+        Column(modifier = Modifier.testTag("year-summary-months")) {
             Month.entries.forEachIndexed { index, month ->
-                val monthTotal = summary.months[month.value - 1]
-                val empty = !summary.monthHasData.getOrElse(index) { false }
-                MonthLine(
-                    modifier = if (layoutMode == YearSummaryLayoutMode.FixedViewport) {
-                        Modifier
-                            .weight(1f)
-                            .testTag("year-summary-month-${month.value}")
-                    } else {
-                        Modifier
-                            .heightIn(min = ShortViewportMonthRowMinHeight)
-                            .testTag("year-summary-month-${month.value}")
-                    },
-                    label = monthDisplayName(month, locale),
-                    detail = if (empty) {
-                        null
-                    } else {
-                        "${monthTotal.shiftCount} · ${formatDurationCompact(monthTotal.workedMinutes)}"
-                    },
+                if (!summary.monthHasData.getOrElse(index) { false }) return@forEachIndexed
+                val monthTotal = summary.months[index]
+                MonthBarRow(
+                    modifier = Modifier.testTag("year-summary-month-${month.value}"),
+                    label = monthLabel(month, locale),
+                    fraction = if (maxAbs == 0L) 0f else abs(monthTotal.totalPayMicros).toFloat() / maxAbs,
                     amount = formatAmountMicros(monthTotal.totalPayMicros, locale),
-                    dimmed = empty,
-                    style = monthStyle,
+                    barColor = if (monthTotal.totalPayMicros < 0L) colors.error else colors.primary,
                 )
             }
+        }
+        if (summary.monthsWithData == 0) {
+            Text(
+                text = stringResource(R.string.year_no_data),
+                style = MaterialTheme.typography.bodyMedium,
+                color = colors.onSurfaceVariant,
+            )
+        } else if (emptyMonths.isNotEmpty()) {
+            Text(
+                text = stringResource(
+                    R.string.year_empty_months,
+                    emptyMonths.joinToString(", ") { monthLabel(it, locale) },
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.onSurfaceVariant,
+            )
         }
     }
 }
 
 @Composable
-private fun YearMetricRow(
+private fun MonthBarRow(
     label: String,
-    value: String,
-    style: TextStyle,
-    valueColor: Color = MaterialTheme.colorScheme.onSurface,
-    emphasized: Boolean = false,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 24.dp),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.weight(1f),
-            style = style,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = value,
-            style = style,
-            fontWeight = if (emphasized) FontWeight.Medium else FontWeight.Normal,
-            color = valueColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
-@Composable
-private fun MonthSectionHeader(compactText: Boolean) {
-    val primaryHeaderStyle = if (compactText) {
-        MaterialTheme.typography.labelSmall
-    } else {
-        MaterialTheme.typography.bodyMedium
-    }
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 22.dp),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = stringResource(R.string.by_month),
-            modifier = Modifier.weight(MonthLabelWeight),
-            style = primaryHeaderStyle,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = stringResource(R.string.year_month_detail_header),
-            modifier = Modifier.weight(MonthDetailWeight),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-            textAlign = TextAlign.End,
-            maxLines = 1,
-        )
-        Text(
-            text = stringResource(R.string.year_month_income_header),
-            modifier = Modifier.weight(MonthAmountWeight),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-            textAlign = TextAlign.End,
-            maxLines = 1,
-        )
-    }
-}
-
-@Composable
-private fun MonthLine(
-    modifier: Modifier = Modifier,
-    label: String,
-    detail: String?,
+    fraction: Float,
     amount: String,
-    dimmed: Boolean,
-    style: TextStyle,
+    barColor: Color,
+    modifier: Modifier = Modifier,
 ) {
-    val alpha = if (dimmed) 0.38f else 1f
     Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(AppDimens.rowGap),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(40.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = label,
-            modifier = Modifier.alpha(alpha).weight(MonthLabelWeight),
-            style = style,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = detail ?: "—",
-            modifier = Modifier.weight(MonthDetailWeight).alpha(alpha),
-            style = style,
+            modifier = Modifier.width(MonthLabelWidth),
+            style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = if (detail == null) TextAlign.Center else TextAlign.End,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
         )
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .height(BarHeight)
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh, RoundedCornerShape(4.dp)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(fraction.coerceIn(0.02f, 1f))
+                    .height(BarHeight)
+                    .background(barColor, RoundedCornerShape(4.dp)),
+            )
+        }
         Text(
-            text = if (dimmed) "—" else amount,
-            modifier = Modifier.weight(MonthAmountWeight).alpha(alpha),
-            style = style,
+            text = amount,
+            modifier = Modifier.width(AmountColumnWidth),
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
-            textAlign = if (dimmed) TextAlign.Center else TextAlign.End,
+            textAlign = TextAlign.End,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
-private fun monthDisplayName(month: Month, locale: java.util.Locale): String =
-    month.getDisplayName(JavaTextStyle.SHORT, locale).replaceFirstChar { it.uppercase(locale) }
+private fun monthLabel(month: Month, locale: Locale): String =
+    month.getDisplayName(JavaTextStyle.SHORT_STANDALONE, locale).replaceFirstChar { it.uppercase(locale) }

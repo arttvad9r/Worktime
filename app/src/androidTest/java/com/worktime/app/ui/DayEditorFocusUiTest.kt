@@ -3,19 +3,16 @@ package com.worktime.app.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.test.SemanticsNodeInteraction
-import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
-import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasPerformImeAction
-import androidx.compose.ui.test.hasSetTextAction
-import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.assertIsNotFocused
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.worktime.app.domain.model.WorkEntry
 import com.worktime.app.ui.dayeditor.DayEditorSheetContent
 import com.worktime.app.ui.theme.WorkTimeTheme
 import java.time.LocalDate
@@ -29,13 +26,14 @@ class DayEditorFocusUiTest {
     val composeRule = createComposeRule()
 
     @Test
-    fun persistentNumericEditorKeepsFocusAcrossFieldChanges() {
+    fun keyboardStaysClosedOnOpenAndImeNextMovesToRate() {
         composeRule.setContent {
             WorkTimeTheme {
                 Box(Modifier.size(320.dp, 800.dp)) {
                     DayEditorSheetContent(
                         date = LocalDate.of(2026, 8, 21),
                         existing = null,
+                        recentEntries = emptyList(),
                         defaultHourlyRateMicros = 370_000_000L,
                         operationErrorMessage = null,
                         onDismiss = {},
@@ -46,28 +44,42 @@ class DayEditorFocusUiTest {
             }
         }
 
-        val input = activeInput()
-        input.performClick()
-        input.assertIsFocused()
-
-        // IME Next moves Duration -> Rate. The same persistent input must keep focus so the
-        // platform IME session does not close and reopen while the field changes slots.
-        input.performImeAction()
         composeRule.waitForIdle()
-        activeInput().assertIsFocused()
-        composeRule.onNodeWithTag("day-editor-row-duration").assertIsDisplayed()
+        composeRule.onNodeWithTag("day-editor-duration").assertIsNotFocused()
 
-        // Switching by tapping another value row must preserve focus for the same reason.
-        composeRule.onNodeWithTag("day-editor-row-bonus").performClick()
+        composeRule.onNodeWithTag("day-editor-duration").performClick()
+        composeRule.onNodeWithTag("day-editor-duration").assertIsFocused()
+        composeRule.onNodeWithTag("day-editor-duration").performImeAction()
         composeRule.waitForIdle()
-        activeInput().assertIsFocused()
-        composeRule.onNodeWithTag("day-editor-row-rate").assertIsDisplayed()
+        composeRule.onNodeWithTag("day-editor-rate").assertIsFocused()
     }
 
-    private fun activeInput(): SemanticsNodeInteraction = composeRule.onNode(
-        matcher = hasAnyAncestor(hasTestTag("day-editor-active-field")) and
-            hasSetTextAction() and
-            hasPerformImeAction(),
-        useUnmergedTree = true,
-    )
+    @Test
+    fun tappingDurationHintFillsDurationField() {
+        val history = listOf(
+            WorkEntry(LocalDate.of(2026, 8, 14), 13 * 60, 370_000_000L),
+            WorkEntry(LocalDate.of(2026, 8, 15), 15 * 60, 370_000_000L),
+        )
+        composeRule.setContent {
+            WorkTimeTheme {
+                Box(Modifier.size(360.dp, 800.dp)) {
+                    DayEditorSheetContent(
+                        date = LocalDate.of(2026, 8, 21),
+                        existing = null,
+                        recentEntries = history,
+                        defaultHourlyRateMicros = 370_000_000L,
+                        operationErrorMessage = null,
+                        onDismiss = {},
+                        onSave = {},
+                        onDelete = {},
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithTag("day-editor-hint-900").performClick()
+        composeRule.onNodeWithTag("day-editor-duration").assertTextContains("15")
+        composeRule.onNodeWithTag("day-editor-hint-780").performClick()
+        composeRule.onNodeWithTag("day-editor-duration").assertTextContains("13")
+    }
 }

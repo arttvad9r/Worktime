@@ -3,7 +3,7 @@ package com.worktime.app.ui.calendar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,16 +11,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -29,296 +29,183 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.worktime.app.R
-import com.worktime.app.domain.calculation.SalaryCalculator
-import com.worktime.app.domain.model.WorkEntry
-import com.worktime.app.ui.format.formatAmountMicros
-import com.worktime.app.ui.format.formatDurationCompact
-import com.worktime.app.ui.format.formatWholeAmountMicros
+import com.worktime.app.ui.theme.semanticColors
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
 
+private const val AmountHiddenFontScale = 1.3f
+
 @Composable
 internal fun CalendarGrid(
-    state: CalendarUiState,
+    month: CalendarMonthUi,
+    selectedDate: LocalDate?,
     onDayClick: (LocalDate) -> Unit,
     locale: Locale,
     modifier: Modifier = Modifier,
 ) {
-    val weekRowHeight = WeekRowHeight
-    val weekdayRowHeight = 28.dp
-    val dateAreaHeight = 28.dp
-    Box(
-        modifier = modifier
-            .height(calendarGridHeight())
-            .testTag("calendar-grid"),
-    ) {
-        val weekdays = (0 until 7).map { DayOfWeek.MONDAY.plus(it.toLong()) }
-        val firstDay = state.visibleMonth.atDay(1)
-        val gridStart = firstDay.minusDays((firstDay.dayOfWeek.value - 1).toLong())
-        val cells = (0L until 42L).map { offset -> gridStart.plusDays(offset) }
-        val today = LocalDate.now()
+    val weekdays = remember(locale) {
+        (0 until CalendarDaysInWeek).map { DayOfWeek.MONDAY.plus(it.toLong()).getDisplayName(TextStyle.SHORT, locale) }
+    }
+    val labels = DayCellLabels(
+        today = stringResource(R.string.today),
+        selected = stringResource(R.string.day_selected),
+        entry = stringResource(R.string.has_entry),
+        bonus = stringResource(R.string.has_bonus),
+        penalty = stringResource(R.string.has_penalty),
+        fillToday = stringResource(R.string.fill_today),
+    )
+    val showAmount = LocalDensity.current.fontScale < AmountHiddenFontScale
 
-        Column(
+    Column(modifier = modifier.testTag("calendar-grid")) {
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 6.dp),
+                .fillMaxWidth()
+                .height(28.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(weekdayRowHeight),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                weekdays.forEach { day ->
-                    Text(
-                        text = day.getDisplayName(TextStyle.SHORT, locale),
-                        modifier = Modifier.weight(1f),
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                    )
-                }
-            }
-
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
-            )
-
-            cells.chunked(7).forEachIndexed { weekIndex, week ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(weekRowHeight),
-                ) {
-                    week.forEach { date ->
-                        val isInVisibleMonth = YearMonth.from(date) == state.visibleMonth
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxSize(),
-                        ) {
-                            DayCell(
-                                date = date,
-                                entry = state.entries[date],
-                                isInVisibleMonth = isInVisibleMonth,
-                                isToday = date == today,
-                                isSelected = date == state.selectedDate,
-                                onClick = { onDayClick(date) },
-                                locale = locale,
-                                dateAreaHeight = dateAreaHeight,
-                                isLastGridRow = weekIndex == CalendarWeekCount - 1,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private const val CalendarWeekCount = 6
-private val WeekRowHeight = 64.dp
-
-internal fun calendarGridHeight(): Dp =
-    WeekRowHeight * CalendarWeekCount + 28.dp + 8.dp
-
-@Composable
-private fun DayCell(
-    date: LocalDate,
-    entry: WorkEntry?,
-    isInVisibleMonth: Boolean,
-    isToday: Boolean,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    locale: Locale,
-    dateAreaHeight: Dp,
-    isLastGridRow: Boolean,
-) {
-    val visibleEntry = entry.takeIf { isInVisibleMonth }
-    val largeFont = LocalDensity.current.fontScale >= 1.5f
-    val interactionSource = remember { MutableInteractionSource() }
-    val totalMicros = visibleEntry?.let {
-        runCatching { SalaryCalculator.entryPay(it).totalPayMicros }.getOrNull()
-    }
-    val dateLabel = date.format(
-        DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(locale),
-    )
-    val a11yDescription = buildDayCellDescription(
-        dateLabel = dateLabel,
-        todayLabel = if (isToday) stringResource(R.string.today) else null,
-        selectedLabel = if (isSelected) stringResource(R.string.day_selected) else null,
-        entryLabel = if (visibleEntry != null) stringResource(R.string.has_entry) else null,
-        durationText = if (visibleEntry != null && visibleEntry.workedMinutes > 0) {
-            formatDuration(visibleEntry.workedMinutes)
-        } else {
-            null
-        },
-        amountText = if (totalMicros != null && shouldShowDayAmount(totalMicros)) {
-            formatAmountMicros(totalMicros, locale)
-        } else {
-            null
-        },
-        bonusText = if ((visibleEntry?.bonusMicros ?: 0L) > 0L) {
-            stringResource(R.string.has_bonus)
-        } else {
-            null
-        },
-        penaltyText = if ((visibleEntry?.penaltyMicros ?: 0L) > 0L) {
-            stringResource(R.string.has_penalty)
-        } else {
-            null
-        },
-    )
-    val dateColor = when {
-        !isInVisibleMonth -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.24f)
-        isToday -> MaterialTheme.colorScheme.primary
-        else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
-    }
-    val amountColor = if ((totalMicros ?: 0L) < 0L) {
-        MaterialTheme.colorScheme.error
-    } else {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.90f)
-    }
-    val borderColor = if (isToday && isInVisibleMonth) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-    }
-    val backgroundColor = when {
-        isSelected -> MaterialTheme.colorScheme.primaryContainer
-        visibleEntry != null -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f)
-        else -> Color.Transparent
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .border(
-                width = if (isToday && isInVisibleMonth) 1.dp else 0.5.dp,
-                brush = SolidColor(borderColor),
-                shape = RectangleShape,
-            )
-            .background(backgroundColor)
-            .semantics(mergeDescendants = true) { contentDescription = a11yDescription }
-            .then(
-                if (isLastGridRow && isInVisibleMonth) Modifier.testTag("calendar-last-row-day")
-                else Modifier,
-            )
-            .clickable(
-                enabled = isInVisibleMonth,
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick,
-            ),
-    ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(dateAreaHeight)
-                    .padding(top = 3.dp, end = 4.dp),
-                contentAlignment = Alignment.TopEnd,
-            ) {
+            weekdays.forEach { name ->
                 Text(
-                    text = date.dayOfMonth.toString(),
+                    text = name,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = dateColor,
                     maxLines = 1,
                 )
             }
-            if (visibleEntry != null) {
-                if (largeFont) {
-                    Column(
+        }
+        month.weeks.forEach { week ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                week.forEach { cell ->
+                    DayCell(
+                        cell = cell,
+                        isSelected = cell.date == selectedDate,
+                        showAmount = showAmount,
+                        labels = labels,
+                        onClick = onDayClick,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .padding(top = dateAreaHeight, start = 2.dp, end = 2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
+                            .weight(1f)
+                            .fillMaxSize(),
+                    )
+                }
+            }
+        }
+    }
+}
+
+private class DayCellLabels(
+    val today: String,
+    val selected: String,
+    val entry: String,
+    val bonus: String,
+    val penalty: String,
+    val fillToday: String,
+)
+
+@Composable
+private fun DayCell(
+    cell: DayCellUi,
+    isSelected: Boolean,
+    showAmount: Boolean,
+    labels: DayCellLabels,
+    onClick: (LocalDate) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val semantic = MaterialTheme.semanticColors
+    val description = buildDayCellDescription(
+        dateLabel = cell.dateLabel,
+        todayLabel = if (cell.isToday) labels.today else null,
+        selectedLabel = if (isSelected) labels.selected else null,
+        entryLabel = if (cell.hasEntry) labels.entry else null,
+        durationText = cell.durationText,
+        amountText = cell.amountText,
+        bonusText = if (cell.hasBonus) labels.bonus else null,
+        penaltyText = if (cell.hasPenalty) labels.penalty else null,
+    )
+    val showTodayHint = cell.isToday && !cell.hasEntry
+    val background = when {
+        isSelected -> colors.primaryContainer
+        cell.hasEntry -> colors.surfaceContainerHigh
+        else -> colors.background
+    }
+
+    Box(modifier = modifier.padding(2.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(MaterialTheme.shapes.small)
+                .background(background)
+                .then(
+                    if (cell.isToday && cell.inMonth) {
+                        Modifier.border(1.5.dp, colors.primary, MaterialTheme.shapes.small)
+                    } else {
+                        Modifier
+                    },
+                )
+                .semantics(mergeDescendants = true) {
+                    contentDescription = if (showTodayHint) "$description, ${labels.fillToday}" else description
+                }
+                .clickable(enabled = cell.inMonth) { onClick(cell.date) },
+        ) {
+            Text(
+                text = cell.dayText,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 6.dp, top = 4.dp),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (cell.isToday) FontWeight.Bold else FontWeight.Normal,
+                color = when {
+                    !cell.inMonth -> colors.onSurfaceVariant.copy(alpha = 0.3f)
+                    cell.isToday -> colors.primary
+                    else -> colors.onSurfaceVariant
+                },
+                maxLines = 1,
+            )
+            if (cell.inMonth && (cell.hasBonus || cell.hasPenalty)) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 6.dp, top = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                ) {
+                    if (cell.hasBonus) MarkerDot(semantic.positive)
+                    if (cell.hasPenalty) MarkerDot(semantic.negative)
+                }
+            }
+            if (cell.inMonth && (cell.durationText != null || cell.amountText != null)) {
+                Column(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(horizontal = 2.dp, vertical = 4.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(1.dp),
+                ) {
+                    if (cell.durationText != null) {
                         Text(
-                            text = if (visibleEntry.workedMinutes > 0) {
-                                formatDurationCompact(visibleEntry.workedMinutes)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 10.sp,
-                                lineHeight = 11.sp,
-                            ),
+                            text = cell.durationText,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = if (totalMicros != null && shouldShowDayAmount(totalMicros)) {
-                                formatWholeAmountMicros(totalMicros, locale)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 7.sp,
-                                lineHeight = 8.sp,
-                            ),
-                            fontWeight = FontWeight.Medium,
-                            color = amountColor,
+                            color = colors.onSurface,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                } else {
-                    Box(modifier = Modifier.fillMaxSize()) {
+                    if (showAmount && cell.amountText != null) {
                         Text(
-                            modifier = Modifier
-                                .align(Alignment.Center)
-                                .fillMaxWidth()
-                                .padding(horizontal = 2.dp),
-                            text = if (visibleEntry.workedMinutes > 0) {
-                                formatDurationCompact(visibleEntry.workedMinutes)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontSize = 15.sp,
-                                lineHeight = 18.sp,
-                            ),
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            textAlign = TextAlign.Center,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth()
-                                .padding(bottom = 3.dp)
-                                .padding(horizontal = 2.dp),
-                            text = if (totalMicros != null && shouldShowDayAmount(totalMicros)) {
-                                formatWholeAmountMicros(totalMicros, locale)
-                            } else {
-                                ""
-                            },
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                lineHeight = 13.sp,
-                            ),
-                            fontWeight = FontWeight.Medium,
-                            color = amountColor,
-                            textAlign = TextAlign.Center,
+                            text = cell.amountText,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (cell.isNegative) colors.error else colors.onSurfaceVariant,
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis,
@@ -326,45 +213,23 @@ private fun DayCell(
                     }
                 }
             }
+            if (showTodayHint && cell.inMonth) {
+                Text(
+                    text = "+",
+                    modifier = Modifier.align(Alignment.Center),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = colors.primary,
+                )
+            }
         }
     }
 }
 
-internal fun shouldShowDayAmount(totalMicros: Long?): Boolean = totalMicros != null && totalMicros != 0L
-
-internal fun shouldShowTodayEntryPrompt(
-    visibleMonth: YearMonth,
-    entryDates: Set<LocalDate>,
-    today: LocalDate,
-): Boolean = visibleMonth == YearMonth.from(today) && today !in entryDates
-
-internal fun buildDayCellDescription(
-    dateLabel: String,
-    todayLabel: String?,
-    selectedLabel: String?,
-    entryLabel: String?,
-    durationText: String?,
-    amountText: String?,
-    bonusText: String?,
-    penaltyText: String?,
-): String = listOfNotNull(
-    dateLabel,
-    todayLabel,
-    selectedLabel,
-    entryLabel,
-    durationText,
-    amountText,
-    bonusText,
-    penaltyText,
-).joinToString(", ")
-
 @Composable
-private fun formatDuration(minutes: Int): String {
-    val hours = minutes / 60
-    val remainder = minutes % 60
-    return if (remainder == 0) {
-        stringResource(R.string.duration_hours, hours)
-    } else {
-        stringResource(R.string.duration_hours_minutes, hours, remainder)
-    }
+private fun MarkerDot(color: Color) {
+    Box(
+        modifier = Modifier
+            .size(6.dp)
+            .background(color, CircleShape),
+    )
 }

@@ -27,7 +27,6 @@ object AppMotion {
     const val NoBounceDampingRatio = 1f
     const val ControlStiffness = 1_100f
     const val NavigationStiffness = 850f
-    const val PagerStiffness = 700f
 
     val StandardEasing: Easing = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 }

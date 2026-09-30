@@ -42,6 +42,7 @@ internal fun BoxScope.AppOverlays(
         DayEditorSheet(
             date = date,
             existing = calendarState.entries[date],
+            recentEntries = calendarState.recentEntries,
             defaultHourlyRateMicros = preferencesState.defaultHourlyRateMicros,
             operationErrorMessage = operationErrorMessage,
             onDismiss = calendarViewModel::dismissEditor,
@@ -61,6 +62,7 @@ internal fun BoxScope.AppOverlays(
             operationErrorMessage = operationErrorMessage,
             onDismiss = calendarViewModel::dismissChangeRateSheet,
             onChangeRate = calendarViewModel::changeRateForPeriod,
+            countAffectedEntries = calendarViewModel::countEntries,
         )
     }
 

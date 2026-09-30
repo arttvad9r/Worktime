@@ -281,10 +281,18 @@ private fun RateRow(
             } else {
                 AppFieldValueSlot {
                     Text(
-                        text = formatDecimalMicros(rateMicros),
+                        text = if (rateMicros == 0L) {
+                            stringResource(R.string.rate_not_set)
+                        } else {
+                            formatDecimalMicros(rateMicros)
+                        },
                         modifier = Modifier.padding(end = 8.dp),
                         style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = if (rateMicros == 0L) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
                         maxLines = 1,
                     )
                 }

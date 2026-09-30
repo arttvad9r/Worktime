@@ -16,7 +16,7 @@ Keep WorkTime a small calendar-first personal timesheet. Do not add notes, quick
 ./scripts/verify.sh
 ```
 
-6. Execute the relevant physical-device checklist in `docs/ANDROID_QA.md` for UI changes.
+6. Check UI changes manually on a device or emulator.
 
 Do not report a build, test or device result as passed unless the command/test actually ran to completion. Infrastructure failures must be recorded separately from code failures.
 

@@ -9,6 +9,7 @@ import java.time.LocalDate
 fun DayEditorSheet(
     date: LocalDate,
     existing: WorkEntry?,
+    recentEntries: List<WorkEntry>,
     defaultHourlyRateMicros: Long,
     operationErrorMessage: String?,
     onDismiss: () -> Unit,
@@ -19,6 +20,7 @@ fun DayEditorSheet(
         DayEditorSheetContent(
             date = date,
             existing = existing,
+            recentEntries = recentEntries,
             defaultHourlyRateMicros = defaultHourlyRateMicros,
             operationErrorMessage = operationErrorMessage,
             onDismiss = onDismiss,

@@ -30,13 +30,37 @@ class SalaryCalculatorTest {
     }
 
     @Test
-    fun `half micro rounds away from zero`() {
+    fun `half cent rounds up`() {
         val entry = WorkEntry(
             date = LocalDate.of(2026, 8, 20),
             workedMinutes = 30,
-            hourlyRateMicros = 1,
+            hourlyRateMicros = 30_000,
         )
-        assertEquals(1L, SalaryCalculator.entryPay(entry).basePayMicros)
+        assertEquals(20_000L, SalaryCalculator.entryPay(entry).basePayMicros)
+    }
+
+    @Test
+    fun `entry pay is rounded to cents`() {
+        val entry = WorkEntry(
+            date = LocalDate.of(2026, 8, 20),
+            workedMinutes = 25,
+            hourlyRateMicros = 100_000_000,
+        )
+        assertEquals(41_670_000L, SalaryCalculator.entryPay(entry).basePayMicros)
+    }
+
+    @Test
+    fun `month total equals sum of rounded entries`() {
+        val entries = (1..3).map {
+            WorkEntry(
+                date = LocalDate.of(2026, 8, it),
+                workedMinutes = 25,
+                hourlyRateMicros = 100_000_000,
+            )
+        }
+        val summary = SalaryCalculator.monthSummary(entries)
+        assertEquals(125_010_000L, summary.totalPayMicros)
+        assertEquals(entries.sumOf { SalaryCalculator.entryPay(it).totalPayMicros }, summary.totalPayMicros)
     }
 
     @Test
@@ -77,7 +101,7 @@ class SalaryCalculatorTest {
             Arguments.of(0, 10_000_000L, 50_000_000L, 0L, 50_000_000L),
             Arguments.of(8 * 60, 10_000L, 0L, 0L, 80_000L),
             Arguments.of(1, 60_000_000L, 0L, 0L, 1_000_000L),
-            Arguments.of(30, 1L, 0L, 0L, 1L),
+            Arguments.of(30, 30_000L, 0L, 0L, 20_000L),
         )
     }
 }

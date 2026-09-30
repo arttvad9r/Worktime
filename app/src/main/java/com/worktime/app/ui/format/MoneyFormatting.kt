@@ -33,32 +33,17 @@ fun formatDecimalMicros(micros: Long): String = BigDecimal.valueOf(micros, 6)
     .stripTrailingZeros()
     .toPlainString()
 
+/** Whole amounts have no decimals; anything else always shows two ("2 712.50"). */
 fun formatAmountMicros(
     micros: Long,
     locale: Locale = Locale.getDefault(),
-): String = amountFormatter(locale, grouping = true, maximumFractionDigits = 2)
-    .format(BigDecimal.valueOf(micros, 6))
-
-fun formatCompactAmountMicros(
-    micros: Long,
-    locale: Locale = Locale.getDefault(),
-): String = amountFormatter(locale, grouping = false, maximumFractionDigits = 2)
-    .format(BigDecimal.valueOf(micros, 6))
-
-/** Whole-unit display for dense calendar surfaces; 4_810_000_000 micros -> "4 810". */
-fun formatWholeAmountMicros(
-    micros: Long,
-    locale: Locale = Locale.getDefault(),
-): String = amountFormatter(locale, grouping = true, maximumFractionDigits = 0)
-    .format(BigDecimal.valueOf(micros, 6))
-
-private fun amountFormatter(
-    locale: Locale,
-    grouping: Boolean,
-    maximumFractionDigits: Int,
-): NumberFormat = NumberFormat.getNumberInstance(locale).apply {
-    isGroupingUsed = grouping
-    minimumFractionDigits = 0
-    this.maximumFractionDigits = maximumFractionDigits
-    roundingMode = RoundingMode.HALF_UP
+): String {
+    val amount = BigDecimal.valueOf(micros, 6).setScale(2, RoundingMode.HALF_UP)
+    val whole = amount.stripTrailingZeros().scale() <= 0
+    return NumberFormat.getNumberInstance(locale).apply {
+        isGroupingUsed = true
+        minimumFractionDigits = if (whole) 0 else 2
+        maximumFractionDigits = 2
+        roundingMode = RoundingMode.HALF_UP
+    }.format(amount)
 }

@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -113,11 +114,16 @@ class CalendarViewModel(
         val canUndo: Boolean,
     )
 
+    private val recentEntries = workEntryRepository
+        .observeDateRange(LocalDate.now().minusDays(RECENT_HISTORY_DAYS), LocalDate.now())
+
     val state: StateFlow<CalendarUiState> = combine(
         baseState,
         overlayState,
-    ) { base, overlay ->
+        recentEntries,
+    ) { base, overlay, recent ->
         base.copy(
+            recentEntries = recent,
             isChangeRateSheetOpen = overlay.isChangeRateSheetOpen,
             changeRateInitialRange = overlay.changeRateInitialRange,
             canUndo = overlay.canUndo,
@@ -150,6 +156,9 @@ class CalendarViewModel(
         changeRateInitialRange.value = range
         changeRateSheetOpen.value = true
     }
+
+    suspend fun countEntries(startDate: LocalDate, endDate: LocalDate): Int =
+        workEntryRepository.observeDateRange(startDate, endDate).first().size
 
     fun dismissChangeRateSheet() {
         operationError.value = null
@@ -269,6 +278,8 @@ class CalendarViewModel(
     }
 
     companion object {
+        private const val RECENT_HISTORY_DAYS = 180L
+
         fun factory(
             workEntryRepository: WorkEntryRepository,
             userPreferencesRepository: UserPreferencesRepository,

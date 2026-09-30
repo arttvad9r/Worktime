@@ -1,7 +1,5 @@
 package com.worktime.app.ui.calendar
 
-import java.time.LocalDate
-import java.time.YearMonth
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -85,33 +83,5 @@ class CalendarAmountVisibilityTest {
         assertTrue(shouldUseErrorColorForTotal(-1L))
         assertFalse(shouldUseErrorColorForTotal(0L))
         assertFalse(shouldUseErrorColorForTotal(1L))
-    }
-
-    @Test
-    fun `fill today prompt is shown only for missing entry in current month`() {
-        val today = LocalDate.of(2026, 8, 28)
-        val currentMonth = YearMonth.from(today)
-
-        assertTrue(
-            shouldShowTodayEntryPrompt(
-                visibleMonth = currentMonth,
-                entryDates = emptySet(),
-                today = today,
-            ),
-        )
-        assertFalse(
-            shouldShowTodayEntryPrompt(
-                visibleMonth = currentMonth,
-                entryDates = setOf(today),
-                today = today,
-            ),
-        )
-        assertFalse(
-            shouldShowTodayEntryPrompt(
-                visibleMonth = currentMonth.minusMonths(1),
-                entryDates = emptySet(),
-                today = today,
-            ),
-        )
     }
 }

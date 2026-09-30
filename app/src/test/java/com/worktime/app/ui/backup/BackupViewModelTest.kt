@@ -116,6 +116,32 @@ class BackupViewModelTest {
     }
 
     @Test
+    fun `undo import restores previous entries and preferences`() = runTest {
+        val oldEntry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000L)
+        val importedEntry = WorkEntry(LocalDate.of(2026, 7, 1), 240, 8_000_000L)
+        val workRepository = FakeWorkEntryRepository(listOf(oldEntry))
+        val oldPreferences = UserPreferences(12_000_000L, ThemeMode.DARK)
+        val preferencesRepository = FakeUserPreferencesRepository(initial = oldPreferences, initialized = true)
+        val serializer = FakeBackupDocumentSerializer()
+        val viewModel = BackupViewModel(workRepository, preferencesRepository, serializer)
+        val payload = BackupPayload(
+            entries = listOf(importedEntry),
+            preferences = UserPreferences(7_000_000L, ThemeMode.LIGHT),
+            defaultRateInitialized = true,
+        )
+
+        viewModel.importBackup(serializer.inputFor(payload))
+        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.confirmImport()
+        assertEquals(BackupOperationEvent.Success.IMPORTED, viewModel.events.first())
+
+        viewModel.undoImport()
+        assertEquals(BackupOperationEvent.Success.IMPORT_UNDONE, viewModel.events.first())
+        assertEquals(listOf(oldEntry), workRepository.entries.value)
+        assertEquals(oldPreferences, preferencesRepository.preferences.first())
+    }
+
+    @Test
     fun `zero imported default rate keeps initialization flag`() = runTest {
         val importedEntry = WorkEntry(LocalDate.of(2026, 7, 1), 240, 8_000_000L)
         val preferencesRepository = FakeUserPreferencesRepository()

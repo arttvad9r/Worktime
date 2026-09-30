@@ -39,14 +39,8 @@ class MoneyFormattingTest {
     }
 
     @Test
-    fun `compact amount formatter omits grouping separators`() {
-        assertEquals("1234.5", formatCompactAmountMicros(1_234_500_000L, Locale.US))
-    }
-
-    @Test
-    fun `whole amount formatter rounds away calendar fractions and groups thousands`() {
-        assertEquals("1,235", formatWholeAmountMicros(1_234_500_000L, Locale.US))
-        assertEquals("1,234", formatWholeAmountMicros(1_234_499_999L, Locale.US))
-        assertEquals("4,810", formatWholeAmountMicros(4_810_000_000L, Locale.US))
+    fun `amount formatter always shows two decimals for fractional amounts`() {
+        assertEquals("2,712.50", formatAmountMicros(2_712_500_000L, Locale.US))
+        assertEquals("4,810", formatAmountMicros(4_810_000_000L, Locale.US))
     }
 }

@@ -35,16 +35,11 @@ internal class YearSummaryViewModel(
 
     private val summaries = year
         .flatMapLatest { selectedYear ->
-            val firstYear = selectedYear - 1
-            val lastYear = selectedYear + 1
             workEntryRepository.observeDateRange(
-                LocalDate.of(firstYear, 1, 1),
-                LocalDate.of(lastYear, 12, 31),
+                LocalDate.of(selectedYear, 1, 1),
+                LocalDate.of(selectedYear, 12, 31),
             ).map { entries ->
-                val entriesByYear = entries.groupBy { it.date.year }
-                (firstYear..lastYear).associateWith { summaryYear ->
-                    buildYearSummary(summaryYear, entriesByYear[summaryYear].orEmpty())
-                }
+                mapOf(selectedYear to buildYearSummary(selectedYear, entries))
             }
         }
         .stateIn(

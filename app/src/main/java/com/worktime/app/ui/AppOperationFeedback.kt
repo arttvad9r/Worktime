@@ -9,6 +9,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import com.worktime.app.R
+import com.worktime.app.ui.backup.BackupOperationError
 import com.worktime.app.ui.backup.BackupOperationEvent
 import com.worktime.app.ui.backup.BackupViewModel
 import com.worktime.app.ui.calendar.CalendarOperationError
@@ -86,16 +87,35 @@ internal fun AppOperationFeedback(
 
     LaunchedEffect(
         backupViewModel,
+        calendarViewModel,
         backupExportedMessage,
         backupImportedMessage,
+        undoLabel,
+        undoFailedMessage,
     ) {
         backupViewModel.events.collect { event ->
             when (event) {
                 BackupOperationEvent.Success.EXPORTED ->
                     snackbarHostState.showSnackbar(backupExportedMessage)
-                BackupOperationEvent.Success.IMPORTED ->
-                    snackbarHostState.showSnackbar(backupImportedMessage)
-                is BackupOperationEvent.Error -> Unit
+                BackupOperationEvent.Success.IMPORTED -> {
+                    val result = snackbarHostState.showSnackbar(
+                        message = backupImportedMessage,
+                        actionLabel = undoLabel,
+                        duration = SnackbarDuration.Long,
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+                        calendarViewModel.prepareForExternalDataReplacement()
+                        backupViewModel.undoImport()
+                    }
+                }
+                BackupOperationEvent.Success.IMPORT_UNDONE -> Unit
+                is BackupOperationEvent.Error ->
+                    if (event.kind == BackupOperationError.UNDO_IMPORT) {
+                        snackbarHostState.showSnackbar(
+                            undoFailedMessage,
+                            duration = SnackbarDuration.Long,
+                        )
+                    }
             }
         }
     }

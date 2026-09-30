@@ -1,23 +1,21 @@
 # Prioritized backlog
 
-**Repository modernization is complete.** The audited application/code baseline is PR #95 (`49d5bfa71e3d49a713377548c5bcf0378796d9ca`) with green post-merge Android CI. The items below are physical release/device verification or future product work, not unfinished refactoring. See [`MODERNIZATION_STATUS.md`](MODERNIZATION_STATUS.md).
+**Repository modernization is complete.** The audited application/code baseline is PR #95 (`49d5bfa71e3d49a713377548c5bcf0378796d9ca`) with green post-merge Android CI. The items below are physical release/device verification or future product work, not unfinished refactoring.
 
 ## P0 — physical release verification
 
 1. Build and install the exact `main` candidate on the primary compact phone; record device model, Android version and commit SHA.
 2. Create/edit/delete entries, relaunch the app and verify Room/DataStore persistence.
-3. Move through duration/rate/bonus/penalty with the numeric IME open; confirm no keyboard close/reopen flash or sheet jump.
-4. Verify the intentionally sparse haptic feedback set and confirm ordinary navigation remains silent.
-5. Repeatedly open/collapse the monthly report by tap and drag; confirm stable anchors and no drag-handle tooltip.
-6. Verify `Fill today` appears only in the current month while today has no entry and disappears after saving.
-7. Verify calendar selected/today/populated states in light and dark themes and confirm grid text remains readable.
-8. Run `Change rate for period` for current month and a custom range; verify invalid end dates are blocked, confirmation copy is correct, the default rate stays unchanged and Undo restores original per-entry rates.
-9. Confirm first-entry default-rate adoption on clean app data, then confirm a different rate on a later day does not overwrite the initialized default.
-10. Export JSON and CSV; import the JSON backup and confirm entries/settings/initialization state restore correctly. Confirm malformed import writes nothing.
-11. Open Year summary from the monthly report, switch years and verify totals plus month-column alignment; verify an empty year remains compact.
-12. Add the home-screen widget, change an entry and confirm refresh, theme behavior, compact presentation, body tap-through and `+` opening today's editor.
-13. Check Russian and English locales, narrow compact width, rotation/window resize, increased supported font scale and TalkBack; on a large-screen/API 37 environment confirm the adaptive supporting-pane layout remains usable.
-14. Complete the remaining items in `ANDROID_QA.md` and `RELEASE_CHECKLIST.md`.
+3. Move through duration/rate/bonus/penalty with the numeric IME open; confirm the keyboard does not open with the sheet, focus order and that Done on penalty saves.
+4. Swipe between months and use the arrows; confirm no lag and that the header matches the visible page.
+5. Verify calendar selected/today/populated states and bonus/penalty dots in light and dark themes.
+6. Confirm cell, monthly card and yearly totals agree for entries with fractional-cent pay.
+7. Run `Change rate for period`; verify the affected-record count, blocked invalid ranges, unchanged default rate and Undo.
+8. Export JSON and CSV; import the JSON backup, confirm restore and the Undo snackbar; confirm malformed import writes nothing.
+9. Open Year summary from the monthly card, switch years, verify bars and the collapsed empty-month line.
+10. Add the home-screen widget, change an entry and confirm refresh, theme behavior and tap-through.
+11. Check Russian and English locales, rotation/window resize, increased font scale and TalkBack.
+12. Complete the remaining items in `RELEASE_CHECKLIST.md`.
 
 ## P1 — release packaging and hardening
 
@@ -28,7 +26,8 @@
 
 ## P2 — future decisions
 
+- rate periods table (per-day rate history) with its own backup version;
 - multiple work profiles/jobs;
 - overtime/pay-period configuration.
 
-Do not reintroduce currency selection, notes, quick-duration presets, validation helper text, cloud accounts or timers without an explicit product decision. Do not add a separate landscape-only product mode; adaptive rotation/window resizing remains part of the Android quality contract.
+Do not reintroduce currency selection, notes, validation helper text, cloud accounts or timers without an explicit product decision. Do not add a separate landscape-only product mode; adaptive rotation/window resizing remains part of the Android quality contract.

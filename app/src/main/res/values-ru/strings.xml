@@ -21,6 +21,7 @@
     <string name="has_entry">есть запись</string>
 
     <string name="worked">Длительность</string>
+    <string name="rate_not_set">Задать</string>
     <string name="hourly_rate">Ставка за час</string>
     <string name="at_rate">Ставка за час</string>
     <string name="bonus">Премия</string>
@@ -29,7 +30,6 @@
     <string name="calc_expression">%1$s ч × %2$s ₽</string>
     <string name="calculation_base">По ставке</string>
     <string name="calculation_bonus">Премия</string>
-    <string name="year_bonuses">Премии</string>
     <string name="calculation_penalty">Штраф</string>
     <string name="calculation_total">Итого</string>
     <string name="save">Сохранить</string>
@@ -65,17 +65,12 @@
     <string name="ok">ОК</string>
     <string name="change_rate">Изменить ставку</string>
     <string name="change_rate_confirmation_title">Изменить ставку за период?</string>
-    <string name="change_rate_confirmation_text">Ставка изменится для всех записей выбранного периода. Ставка по умолчанию останется прежней.</string>
 
     <string name="year_summary">Итоги за год</string>
-    <string name="year_income">Доход за год</string>
     <string name="year_stats_title">Сводка за год</string>
-    <string name="by_month">По месяцам</string>
-    <string name="year_month_detail_header">смен · ч</string>
-    <string name="year_month_income_header">доход</string>
-    <string name="average_working_month">Среднее за рабочий месяц</string>
-    <string name="average_shift">Средняя смена</string>
-    <string name="average_shift_income">Средний доход за смену</string>
+    <string name="year_average_month">В среднем за месяц: %1$s</string>
+    <string name="year_no_data">За этот год записей нет</string>
+    <string name="year_empty_months">Без записей: %1$s</string>
     <string name="delete_entry_confirmation">Удалить запись за этот день? Это можно отменить в появившемся сообщении.</string>
     <string name="delete">Удалить</string>
     <string name="cancel">Отмена</string>
@@ -118,5 +113,11 @@
         <item quantity="few">В файле %1$d записи. Текущие записи и настройки будут заменены.</item>
         <item quantity="many">В файле %1$d записей. Текущие записи и настройки будут заменены.</item>
         <item quantity="other">В файле %1$d записи. Текущие записи и настройки будут заменены.</item>
+    </plurals>
+    <plurals name="change_rate_confirmation_text">
+        <item quantity="one">Ставка изменится для %1$d записи выбранного периода. Ставка по умолчанию останется прежней.</item>
+        <item quantity="few">Ставка изменится для %1$d записей выбранного периода. Ставка по умолчанию останется прежней.</item>
+        <item quantity="many">Ставка изменится для %1$d записей выбранного периода. Ставка по умолчанию останется прежней.</item>
+        <item quantity="other">Ставка изменится для %1$d записи выбранного периода. Ставка по умолчанию останется прежней.</item>
     </plurals>
 </resources>

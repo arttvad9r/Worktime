@@ -36,12 +36,14 @@ internal enum class BackupOperationError {
     EXPORT,
     IMPORT,
     IMPORT_ROLLBACK,
+    UNDO_IMPORT,
 }
 
 internal sealed interface BackupOperationEvent {
     enum class Success : BackupOperationEvent {
         EXPORTED,
         IMPORTED,
+        IMPORT_UNDONE,
     }
 
     data class Error(val kind: BackupOperationError) : BackupOperationEvent
@@ -56,6 +58,7 @@ internal class BackupViewModel(
     private val pendingImport = MutableStateFlow<BackupPayload?>(null)
     private val operationError = MutableStateFlow<BackupOperationError?>(null)
     private var operationGeneration = 0L
+    private var importUndoSnapshot: BackupPayload? = null
     private val _events = Channel<BackupOperationEvent>(Channel.BUFFERED)
     val events: Flow<BackupOperationEvent> = _events.receiveAsFlow()
 
@@ -112,6 +115,7 @@ internal class BackupViewModel(
 
     fun confirmImport() {
         val data = pendingImport.value ?: return
+        importUndoSnapshot = null
         runOperation(BackupOperationError.IMPORT, supersede = true, body = {
             val oldEntries = workEntryRepository.getAll()
             val oldPreferences = userPreferencesRepository.preferences.first()
@@ -141,9 +145,25 @@ internal class BackupViewModel(
                 }
                 throw error
             }
+            importUndoSnapshot = BackupPayload(oldEntries, oldPreferences, oldDefaultRateInitialized)
         }, onSuccess = {
             pendingImport.value = null
             _events.send(BackupOperationEvent.Success.IMPORTED)
+        })
+    }
+
+    fun undoImport() {
+        val snapshot = importUndoSnapshot ?: return
+        runOperation(BackupOperationError.UNDO_IMPORT, supersede = true, body = {
+            workEntryRepository.replaceAll(snapshot.entries)
+            userPreferencesRepository.update(
+                defaultHourlyRateMicros = snapshot.preferences.defaultHourlyRateMicros,
+                themeMode = snapshot.preferences.themeMode,
+                defaultRateInitialized = snapshot.defaultRateInitialized,
+            )
+            importUndoSnapshot = null
+        }, onSuccess = {
+            _events.send(BackupOperationEvent.Success.IMPORT_UNDONE)
         })
     }
 

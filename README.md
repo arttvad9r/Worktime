@@ -97,21 +97,13 @@ Use the repository Gradle Wrapper. The preferred local verification command is:
 
 It runs the repository static audit, JVM tests, debug/release lint and Android build verification. GitHub Actions also runs managed-device instrumentation tests and exercises the release-signing path with a disposable CI-only key.
 
-Repository modernization/refactoring is complete; the remaining release gates require physical-device verification. The exact audit boundary is recorded in [`docs/MODERNIZATION_STATUS.md`](docs/MODERNIZATION_STATUS.md).
-
 For release signing and the GitHub Releases workflow, see [`docs/RELEASE_SIGNING.md`](docs/RELEASE_SIGNING.md) and [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
 
 ## Documentation
 
 - [Product](docs/PRODUCT.md)
-- [UX](docs/UX.md)
-- [UI system](docs/UI_SYSTEM.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Build and CI](docs/BUILD.md)
-- [Testing](docs/TESTING.md)
-- [Modernization status](docs/MODERNIZATION_STATUS.md)
-- [Android QA](docs/ANDROID_QA.md)
-- [Roadmap](docs/ROADMAP.md)
 - [Backlog](docs/BACKLOG.md)
 - [Privacy](docs/PRIVACY.md)
 

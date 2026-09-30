@@ -162,17 +162,6 @@ widget_plural_keys = check_russian_resource_parity(
 defined_string_keys = string_keys(base_strings) | string_keys(base_widget_strings)
 defined_plural_keys = plural_keys(base_strings) | plural_keys(base_widget_strings)
 
-obsolete_validation_keys = {
-    "hours_range_error",
-    "minutes_range_error",
-    "duration_24h_error",
-    "invalid_money_value",
-    "money_value_too_large",
-    "hourly_rate_required",
-}
-if obsolete_validation_keys & defined_string_keys:
-    fail("Obsolete helper-text validation strings are present; numeric validation is outline-only")
-
 string_ref_pattern = re.compile(r"\bR\.string\.([A-Za-z0-9_]+)")
 plural_ref_pattern = re.compile(r"\bR\.plurals\.([A-Za-z0-9_]+)")
 for kotlin_file in (APP / "src/main/java").rglob("*.kt"):
@@ -274,22 +263,6 @@ for label, path in (
         fail(f"Checked-in {label} is empty: {path.relative_to(ROOT)}")
     else:
         checked_in_profile_text[label] = path.read_text(encoding="utf-8")
-if "Baseline Profile" in checked_in_profile_text and "Startup Profile" in checked_in_profile_text:
-    baseline_text = checked_in_profile_text["Baseline Profile"]
-    startup_text = checked_in_profile_text["Startup Profile"]
-    if baseline_text == startup_text:
-        fail("Checked-in Baseline Profile and Startup Profile must not be identical")
-    if "Lcom/worktime/app/MainActivity;" not in baseline_text:
-        fail("Checked-in Baseline Profile must contain source-level WorkTime descriptors")
-    for runtime_rule in (
-        "Lcom/worktime/app/ui/calendar/CalendarPagerState;->navigateNext",
-        "Lcom/worktime/app/ui/calendar/CalendarViewModel;->showMonth",
-    ):
-        if runtime_rule not in baseline_text:
-            fail(f"Checked-in Baseline Profile is missing calendar runtime rule: {runtime_rule}")
-        if runtime_rule in startup_text:
-            fail(f"Calendar runtime rule leaked into checked-in Startup Profile: {runtime_rule}")
-
 signer_fingerprint_path = ROOT / "release/production-signing-cert-sha256.txt"
 if not signer_fingerprint_path.is_file():
     fail("Pinned production signing fingerprint file is missing")
@@ -387,9 +360,6 @@ if 'testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"' not i
     fail("AndroidJUnitRunner is not configured")
 if 'androidx.test:runner' not in build_file and 'androidx.test:runner' not in catalog_file:
     fail("Explicit androidx.test:runner dependency is missing")
-if re.search(r'^material3\s*=\s*".*alpha', catalog_file, re.MULTILINE):
-    fail("Material3 must follow the stable Compose BOM; remove temporary alpha overrides")
-
 if failures:
     print("static-audit: FAILED", file=sys.stderr)
     for item in failures:

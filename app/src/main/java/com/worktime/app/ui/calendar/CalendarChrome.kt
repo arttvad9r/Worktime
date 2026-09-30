@@ -50,38 +50,6 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
-@Composable
-internal fun TodayEntryPrompt(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(AppDimens.rowMinHeight),
-        contentAlignment = Alignment.Center,
-    ) {
-        TextButton(
-            onClick = onClick,
-            modifier = Modifier
-                .height(AppDimens.rowMinHeight)
-                .testTag("today-entry-prompt"),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Add,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = stringResource(R.string.fill_today),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-            )
-        }
-    }
-}
-
 internal fun calendarMonthTitle(
     visibleMonth: YearMonth,
     locale: Locale,

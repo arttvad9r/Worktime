@@ -30,7 +30,7 @@ State is split by feature instead of being accumulated in one root ViewModel:
 
 All repository-backed state exposed to Compose is collected lifecycle-aware. Calendar month and entries are emitted together, and `isReady` blocks editing until persisted state has emitted.
 
-Transient interaction state that does not belong in a ViewModel remains local to its screen. `CalendarPagerState` owns calendar pager position, spring interruption/velocity and gesture-settle bookkeeping; `YearSummaryPagerState` owns the equivalent year-pager interaction state. The selected business month/year still belongs to the corresponding ViewModel and is committed only after the pager settles.
+Transient interaction state that does not belong in a ViewModel remains local to its screen. `CalendarPagerState` maps a bounded `HorizontalPager` (1970–2100) to months and keeps it in sync with `CalendarViewModel.visibleMonth`, the single source of truth. The year screen has no pager: arrows change the year in `YearSummaryViewModel`.
 
 ## Navigation
 
@@ -89,11 +89,11 @@ Parsing rejects malformed/exponent input. `MoneyLimits` bounds user-entered comp
 
 ## UI surfaces
 
-- `CalendarScreen`: adaptive calendar/report orchestration; pager interaction state is delegated to `CalendarPagerState`.
-- `CalendarGrid`, `CalendarChrome`, `CalendarSummary`: focused calendar rendering components.
-- `DayEditorSheet`: public sheet entry point; form, numeric fields and calculation summary are split into focused components.
+- `CalendarScreen`: calendar pager plus monthly report card; pager sync is delegated to `CalendarPagerState`.
+- `CalendarMonthUi`: immutable per-month cell models built once per page; `CalendarGrid`, `CalendarChrome`, `CalendarSummary`: rendering only.
+- `DayEditorSheet`: public sheet entry point; `DayEditorState` validates input; the form is four plain text fields.
 - `SettingsScreen`: default rate, theme and data operations driven by dedicated Preferences/Backup state holders.
-- `YearSummaryScreen`: view-only yearly statistics; destination state lives in `YearSummaryViewModel` and pager interaction state in `YearSummaryPagerState`.
+- `YearSummaryScreen`: view-only yearly totals with per-month bars; empty months are collapsed into one line; state lives in `YearSummaryViewModel`.
 - `AppOverlays`, `AppOperationFeedback`, `AppNavigationMotion`: root-only overlay, feedback and motion concerns extracted from `WorkTimeApp`.
 - `MoneyFormatting` and `DurationFormatting`: presentation-boundary formatting only.
 

@@ -111,10 +111,10 @@ A red CI run must be classified from its actual logs rather than assumed to be i
 
 Automated verification does not replace physical-device QA for the interaction paths that depend on OEM behavior. Recheck at minimum:
 
-- persistent numeric-editor/IME transitions;
+- day-editor focus/IME chain (duration → rate → bonus → penalty);
 - haptic feedback on the intentionally limited interaction set;
 - modal-sheet tap/drag/insets;
-- calendar gestures and contextual `Fill today`;
+- calendar swipe/arrows and the `+` in today's empty cell;
 - system document picker import/export;
 - home-screen widget refresh/tap-through and compact layout;
 - launcher icon presentation after install/update;

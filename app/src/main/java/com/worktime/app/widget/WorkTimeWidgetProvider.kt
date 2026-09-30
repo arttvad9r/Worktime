@@ -16,7 +16,7 @@ import com.worktime.app.domain.preferences.ThemeMode
 import com.worktime.app.domain.repository.UserPreferencesRepository
 import com.worktime.app.domain.repository.WorkEntryRepository
 import com.worktime.app.ui.format.formatDurationCompact
-import com.worktime.app.ui.format.formatWholeAmountMicros
+import com.worktime.app.ui.format.formatAmountMicros
 import java.time.Duration
 import java.time.YearMonth
 import java.time.ZoneId
@@ -257,7 +257,7 @@ private fun widgetSummaryLine(context: Context, summary: MonthSummary): String {
     )
     val income = context.getString(
         R.string.amount_with_currency,
-        formatWholeAmountMicros(summary.totalPayMicros),
+        formatAmountMicros(summary.totalPayMicros),
     )
     return "$shifts · $hours · $income"
 }

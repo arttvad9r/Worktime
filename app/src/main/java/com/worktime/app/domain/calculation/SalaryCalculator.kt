@@ -4,6 +4,8 @@ import com.worktime.app.domain.model.MonthSummary
 import com.worktime.app.domain.model.WorkEntry
 
 object SalaryCalculator {
+    const val MICROS_PER_CENT: Long = 10_000L
+
     data class EntryPay(
         val basePayMicros: Long,
         val totalPayMicros: Long,
@@ -12,13 +14,13 @@ object SalaryCalculator {
     fun entryPay(entry: WorkEntry): EntryPay {
         val basePay = divideRoundedHalfUp(
             numerator = Math.multiplyExact(entry.hourlyRateMicros, entry.workedMinutes.toLong()),
-            denominator = 60L,
-        )
+            denominator = 60L * MICROS_PER_CENT,
+        ) * MICROS_PER_CENT
         return EntryPay(
             basePayMicros = basePay,
             totalPayMicros = Math.subtractExact(
-                Math.addExact(basePay, entry.bonusMicros),
-                entry.penaltyMicros,
+                Math.addExact(basePay, roundToCents(entry.bonusMicros)),
+                roundToCents(entry.penaltyMicros),
             ),
         )
     }
@@ -36,8 +38,8 @@ object SalaryCalculator {
             workedMinutes = Math.addExact(workedMinutes, entry.workedMinutes)
             if (entry.workedMinutes > 0) shiftCount++
             basePay = Math.addExact(basePay, pay.basePayMicros)
-            bonuses = Math.addExact(bonuses, entry.bonusMicros)
-            penalties = Math.addExact(penalties, entry.penaltyMicros)
+            bonuses = Math.addExact(bonuses, roundToCents(entry.bonusMicros))
+            penalties = Math.addExact(penalties, roundToCents(entry.penaltyMicros))
             totalPay = Math.addExact(totalPay, pay.totalPayMicros)
         }
 
@@ -50,6 +52,9 @@ object SalaryCalculator {
             totalPayMicros = totalPay,
         )
     }
+
+    fun roundToCents(micros: Long): Long =
+        divideRoundedHalfUp(micros, MICROS_PER_CENT) * MICROS_PER_CENT
 
     private fun divideRoundedHalfUp(numerator: Long, denominator: Long): Long {
         require(denominator > 0)

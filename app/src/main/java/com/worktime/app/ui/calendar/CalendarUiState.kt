@@ -21,6 +21,7 @@ data class CalendarUiState(
     val isReady: Boolean = false,
     val operationError: CalendarOperationError? = null,
     val canUndo: Boolean = false,
+    val recentEntries: List<WorkEntry> = emptyList(),
 ) {
     val summary: MonthSummary
         get() = SalaryCalculator.monthSummary(entries.values)

@@ -21,6 +21,7 @@
     <string name="has_entry">entry recorded</string>
 
     <string name="worked">Duration</string>
+    <string name="rate_not_set">Tap to set</string>
     <string name="hourly_rate">Rate per hour</string>
     <string name="at_rate">Rate per hour</string>
     <string name="bonus">Bonus</string>
@@ -29,7 +30,6 @@
     <string name="calc_expression">%1$s h × %2$s ₽</string>
     <string name="calculation_base">At hourly rate</string>
     <string name="calculation_bonus">Bonus</string>
-    <string name="year_bonuses">Bonuses</string>
     <string name="calculation_penalty">Penalty</string>
     <string name="calculation_total">Total</string>
     <string name="save">Save</string>
@@ -65,17 +65,12 @@
     <string name="ok">OK</string>
     <string name="change_rate">Change rate</string>
     <string name="change_rate_confirmation_title">Change rate for period?</string>
-    <string name="change_rate_confirmation_text">The rate will be changed for all entries in the selected period. The default rate will stay unchanged.</string>
 
     <string name="year_summary">Year summary</string>
-    <string name="year_income">Income for the year</string>
     <string name="year_stats_title">Year summary</string>
-    <string name="by_month">By month</string>
-    <string name="year_month_detail_header">shifts · h</string>
-    <string name="year_month_income_header">income</string>
-    <string name="average_working_month">Average per working month</string>
-    <string name="average_shift">Average shift</string>
-    <string name="average_shift_income">Average income per shift</string>
+    <string name="year_average_month">Average per month: %1$s</string>
+    <string name="year_no_data">No records this year</string>
+    <string name="year_empty_months">No records: %1$s</string>
     <string name="delete_entry_confirmation">Delete this day entry? You can undo this from the message that appears.</string>
     <string name="delete">Delete</string>
     <string name="cancel">Cancel</string>
@@ -114,5 +109,9 @@
     <plurals name="import_confirmation_text">
         <item quantity="one">The file contains %1$d entry. Current entries and settings will be replaced.</item>
         <item quantity="other">The file contains %1$d entries. Current entries and settings will be replaced.</item>
+    </plurals>
+    <plurals name="change_rate_confirmation_text">
+        <item quantity="one">The rate will change for %1$d entry in the selected period. The default rate will stay unchanged.</item>
+        <item quantity="other">The rate will change for %1$d entries in the selected period. The default rate will stay unchanged.</item>
     </plurals>
 </resources>
