@@ -168,13 +168,11 @@ fun CalendarScreen(
                 Spacer(modifier = Modifier.height(1.dp))
             } else {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    if (summaryTargetExpanded) {
-                        PlainDragHandle(
-                            modifier = Modifier.align(Alignment.CenterHorizontally),
-                            onClick = toggleSummary,
-                            accessibilityLabel = stringResource(R.string.monthly_summary),
-                        )
-                    }
+                    PlainDragHandle(
+                        modifier = Modifier.align(Alignment.CenterHorizontally),
+                        onClick = toggleSummary,
+                        accessibilityLabel = stringResource(R.string.monthly_summary),
+                    )
                     MonthlySummaryPanel(
                         state = state,
                         onOpenYearSummary = { closeSummaryBehind(onOpenYearSummary) },
