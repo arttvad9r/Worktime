@@ -14,7 +14,7 @@ class CalendarMonthTitleTest {
             largeFont = true,
         )
 
-        assertEquals("сент. 2026", title)
+        assertEquals("Сент. 2026", title)
     }
 
     @Test
@@ -25,6 +25,6 @@ class CalendarMonthTitleTest {
             largeFont = false,
         )
 
-        assertEquals("сентябрь 2026", title)
+        assertEquals("Сентябрь 2026", title)
     }
 }

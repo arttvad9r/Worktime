@@ -17,11 +17,10 @@ import com.worktime.app.domain.repository.UserPreferencesRepository
 import com.worktime.app.domain.repository.WorkEntryRepository
 import com.worktime.app.ui.format.formatDurationCompact
 import com.worktime.app.ui.format.formatAmountMicros
+import com.worktime.app.ui.format.formatMonthTitle
 import java.time.Duration
 import java.time.YearMonth
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -281,11 +280,7 @@ private fun explicitWidgetPalette(context: Context, themeMode: ThemeMode): Widge
     )
 }
 
-private fun widgetMonthLabel(month: YearMonth): String {
-    val locale = Locale.getDefault()
-    val label = month.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale))
-    return label.take(1).uppercase(locale) + label.drop(1)
-}
+private fun widgetMonthLabel(month: YearMonth): String = formatMonthTitle(month)
 
 private fun openAppPendingIntent(context: Context, openToday: Boolean): PendingIntent {
     val intent = Intent(context, MainActivity::class.java).apply {

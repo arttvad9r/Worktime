@@ -44,18 +44,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worktime.app.R
 import com.worktime.app.ui.components.AppDimens
+import com.worktime.app.ui.format.formatMonthAbbreviation
+import com.worktime.app.ui.format.formatMonthTitle
 import java.time.Month
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.time.format.TextStyle
 import java.util.Locale
 
 internal fun calendarMonthTitle(
     visibleMonth: YearMonth,
     locale: Locale,
     largeFont: Boolean,
-): String = visibleMonth.format(
-    DateTimeFormatter.ofPattern(if (largeFont) "LLL yyyy" else "LLLL yyyy", locale),
+): String = formatMonthTitle(
+    month = visibleMonth,
+    locale = locale,
+    abbreviated = largeFont,
 )
 
 @Composable
@@ -140,7 +142,7 @@ internal fun MonthPickerDialog(
     var shownYear by rememberSaveable(visibleMonth.year) { mutableStateOf(visibleMonth.year) }
     val monthLabels = remember(locale) {
         (1..12).map { month ->
-            month to Month.of(month).getDisplayName(TextStyle.SHORT, locale)
+            month to formatMonthAbbreviation(Month.of(month), locale)
         }
     }
     AlertDialog(
@@ -186,7 +188,7 @@ internal fun MonthPickerDialog(
                                 onClick = { onSelect(YearMonth.of(shownYear, month)) },
                                 label = {
                                     Text(
-                                        text = label.replaceFirstChar { it.uppercase(locale) },
+                                        text = label,
                                         modifier = Modifier.fillMaxWidth(),
                                         textAlign = TextAlign.Center,
                                         style = MaterialTheme.typography.labelMedium,
@@ -198,8 +200,8 @@ internal fun MonthPickerDialog(
                                 colors = FilterChipDefaults.filterChipColors(
                                     containerColor = Color.Transparent,
                                     labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
-                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
                                 ),
                             )
                         }

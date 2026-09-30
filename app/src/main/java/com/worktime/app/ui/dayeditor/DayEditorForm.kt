@@ -46,11 +46,11 @@ import com.worktime.app.ui.components.AppDestructiveAction
 import com.worktime.app.ui.components.AppDimens
 import com.worktime.app.ui.components.AppModalBottomSheet
 import com.worktime.app.ui.components.AppPrimaryButton
+import com.worktime.app.ui.format.formatDateTitle
 import com.worktime.app.ui.format.formatDecimalMicros
 import com.worktime.app.ui.format.formatDurationCompact
 import com.worktime.app.ui.format.sanitizeMoneyInput
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -107,14 +107,13 @@ internal fun DayEditorSheetContent(
         if (!operationErrorMessage.isNullOrBlank()) snackbarHostState.showSnackbar(operationErrorMessage)
     }
 
-    val next = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
-    val done = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done)
+    val durationNext = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+    val moneyNext = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
+    val moneyDone = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done)
 
     AppModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = date.format(
-            DateTimeFormatter.ofPattern("EEEE, d MMMM", LocalLocale.current.platformLocale),
-        ),
+        title = formatDateTitle(date, LocalLocale.current.platformLocale),
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -134,7 +133,7 @@ internal fun DayEditorSheetContent(
                     placeholder = { Text(stringResource(R.string.duration_placeholder)) },
                     isError = editor.durationError,
                     inputTransformation = durationTransformation,
-                    keyboardOptions = next,
+                    keyboardOptions = durationNext,
                     onKeyboardAction = { rateFocus.requestFocus() },
                     lineLimits = TextFieldLineLimits.SingleLine,
                 )
@@ -164,7 +163,7 @@ internal fun DayEditorSheetContent(
                     label = { Text(stringResource(R.string.hourly_rate)) },
                     isError = editor.rateError,
                     inputTransformation = moneyTransformation,
-                    keyboardOptions = next,
+                    keyboardOptions = moneyNext,
                     onKeyboardAction = { bonusFocus.requestFocus() },
                     lineLimits = TextFieldLineLimits.SingleLine,
                 )
@@ -178,7 +177,7 @@ internal fun DayEditorSheetContent(
                         label = { Text(stringResource(R.string.bonus)) },
                         isError = editor.bonusError,
                         inputTransformation = moneyTransformation,
-                        keyboardOptions = next,
+                        keyboardOptions = moneyNext,
                         onKeyboardAction = { penaltyFocus.requestFocus() },
                         lineLimits = TextFieldLineLimits.SingleLine,
                     )
@@ -191,7 +190,7 @@ internal fun DayEditorSheetContent(
                         label = { Text(stringResource(R.string.penalty)) },
                         isError = editor.penaltyError,
                         inputTransformation = moneyTransformation,
-                        keyboardOptions = done,
+                        keyboardOptions = moneyDone,
                         onKeyboardAction = {
                             editor.entry?.takeIf { editor.canSave }?.let(onSave) ?: focusManager.clearFocus()
                         },

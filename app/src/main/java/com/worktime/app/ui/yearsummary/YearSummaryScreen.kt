@@ -43,11 +43,11 @@ import com.worktime.app.ui.components.AppMotion
 import com.worktime.app.ui.components.AppTopBar
 import com.worktime.app.ui.format.formatAmountMicros
 import com.worktime.app.ui.format.formatDurationCompact
+import com.worktime.app.ui.format.formatMonthAbbreviation
 import com.worktime.app.ui.theme.semanticColors
 import java.time.Month
 import java.util.Locale
 import kotlin.math.abs
-import java.time.format.TextStyle as JavaTextStyle
 
 private val MonthLabelWidth = 44.dp
 private val AmountColumnWidth = 96.dp
@@ -281,4 +281,4 @@ private fun MonthBarRow(
 }
 
 private fun monthLabel(month: Month, locale: Locale): String =
-    month.getDisplayName(JavaTextStyle.SHORT_STANDALONE, locale).replaceFirstChar { it.uppercase(locale) }
+    formatMonthAbbreviation(month, locale)

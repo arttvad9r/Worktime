@@ -45,12 +45,12 @@ import com.worktime.app.ui.components.AppPrimaryButton
 import com.worktime.app.ui.components.AppSegmentedControl
 import com.worktime.app.ui.components.CompactMoneyField
 import com.worktime.app.ui.components.LabelValueRow
+import com.worktime.app.ui.format.formatDateCompact
 import com.worktime.app.ui.format.parseDecimalMicros
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 private enum class RatePeriod { CURRENT_MONTH, CUSTOM }
 
@@ -101,7 +101,7 @@ fun ChangeRateSheet(
     val rangeValid = startDate != null && endDate != null && startDate <= endDate
     val canChange = rateValid && rangeValid
 
-    val dateFormatter = DateTimeFormatter.ofPattern("d MMM yyyy", LocalLocale.current.platformLocale)
+    val locale = LocalLocale.current.platformLocale
     val rateLabel = stringResource(R.string.hourly_rate)
 
     AppModalBottomSheet(
@@ -136,23 +136,23 @@ fun ChangeRateSheet(
                     if (period == RatePeriod.CURRENT_MONTH) {
                         LabelValueRow(
                             label = stringResource(R.string.start_date),
-                            value = visibleMonth.atDay(1).format(dateFormatter),
+                            value = formatDateCompact(visibleMonth.atDay(1), locale),
                             modifier = Modifier.heightIn(min = AppDimens.rowMinHeight),
                         )
                         LabelValueRow(
                             label = stringResource(R.string.end_date),
-                            value = visibleMonth.atEndOfMonth().format(dateFormatter),
+                            value = formatDateCompact(visibleMonth.atEndOfMonth(), locale),
                             modifier = Modifier.heightIn(min = AppDimens.rowMinHeight),
                         )
                     } else {
                         AppNavigationRow(
                             label = stringResource(R.string.start_date),
-                            value = customStart?.format(dateFormatter) ?: "",
+                            value = customStart?.let { formatDateCompact(it, locale) } ?: "",
                             onClick = { pickingDate = DateField.Start },
                         )
                         AppNavigationRow(
                             label = stringResource(R.string.end_date),
-                            value = customEnd?.format(dateFormatter) ?: "",
+                            value = customEnd?.let { formatDateCompact(it, locale) } ?: "",
                             onClick = { pickingDate = DateField.End },
                         )
                     }

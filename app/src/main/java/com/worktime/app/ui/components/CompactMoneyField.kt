@@ -47,13 +47,14 @@ import com.worktime.app.ui.format.sanitizeMoneyInput
 fun CompactInputChrome(
     isError: Boolean,
     modifier: Modifier = Modifier,
+    isFocused: Boolean = false,
     content: @Composable BoxScope.() -> Unit,
 ) {
     val borderColor by animateColorAsState(
-        targetValue = if (isError) {
-            MaterialTheme.colorScheme.error
-        } else {
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f)
+        targetValue = when {
+            isError -> MaterialTheme.colorScheme.error
+            isFocused -> MaterialTheme.colorScheme.primary.copy(alpha = 0.86f)
+            else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f)
         },
         animationSpec = tween(AppDimens.feedbackAnimationMillis),
         label = "compact-input-border",
@@ -98,6 +99,7 @@ fun CompactMoneyField(
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
     var hadFocus by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
     var fieldValue by remember { mutableStateOf(TextFieldValue(text, TextRange(text.length))) }
     LaunchedEffect(text) {
         if (text != fieldValue.text) {
@@ -107,7 +109,7 @@ fun CompactMoneyField(
     LaunchedEffect(autoFocus) {
         if (autoFocus) focusRequester.requestFocus()
     }
-    CompactInputChrome(isError = isError, modifier = modifier) {
+    CompactInputChrome(isError = isError, isFocused = isFocused, modifier = modifier) {
         BasicTextField(
             value = fieldValue,
             onValueChange = { updated ->
@@ -122,6 +124,7 @@ fun CompactMoneyField(
                 .fillMaxWidth()
                 .focusRequester(focusRequester)
                 .onFocusChanged { focusState ->
+                    isFocused = focusState.isFocused
                     if (focusState.isFocused) {
                         hadFocus = true
                         if (fieldValue.text == "0") {

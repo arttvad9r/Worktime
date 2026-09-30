@@ -1,5 +1,7 @@
 package com.worktime.app.ui.calendar
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -31,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.worktime.app.R
+import com.worktime.app.ui.components.AppMotion
 import com.worktime.app.ui.theme.semanticColors
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -137,13 +141,21 @@ private fun DayCell(
         cell.hasEntry -> colors.surfaceContainerHigh
         else -> colors.background
     }
+    val animatedBackground by animateColorAsState(
+        targetValue = background,
+        animationSpec = tween(
+            durationMillis = AppMotion.FastMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "calendar-day-background",
+    )
 
     Box(modifier = modifier.padding(2.dp)) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .clip(MaterialTheme.shapes.small)
-                .background(background)
+                .background(animatedBackground)
                 .then(
                     if (cell.isToday && cell.inMonth) {
                         Modifier.border(1.5.dp, colors.primary, MaterialTheme.shapes.small)
