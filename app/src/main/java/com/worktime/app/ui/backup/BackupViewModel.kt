@@ -12,6 +12,7 @@ import com.worktime.app.domain.repository.UserPreferencesRepository
 import com.worktime.app.domain.repository.WorkEntryRepository
 import java.io.InputStream
 import java.io.OutputStream
+import java.time.LocalDate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -27,9 +28,21 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+internal data class BackupImportPreview(
+    val importedEntryCount: Int,
+    val currentEntryCount: Int,
+    val firstDate: LocalDate?,
+    val lastDate: LocalDate?,
+)
+
 internal data class BackupUiState(
-    val pendingImportCount: Int? = null,
+    val pendingImport: BackupImportPreview? = null,
     val error: BackupOperationError? = null,
+)
+
+private data class PendingImport(
+    val payload: BackupPayload,
+    val currentEntryCount: Int,
 )
 
 internal enum class BackupOperationError {
@@ -55,7 +68,7 @@ internal class BackupViewModel(
     private val backupDocumentSerializer: BackupDocumentSerializer,
     private val dataMutationCoordinator: DataMutationCoordinator = DataMutationCoordinator(),
 ) : ViewModel() {
-    private val pendingImport = MutableStateFlow<BackupPayload?>(null)
+    private val pendingImport = MutableStateFlow<PendingImport?>(null)
     private val operationError = MutableStateFlow<BackupOperationError?>(null)
     private var operationGeneration = 0L
     private var importUndoSnapshot: BackupPayload? = null
@@ -67,7 +80,14 @@ internal class BackupViewModel(
         operationError,
     ) { pending, error ->
         BackupUiState(
-            pendingImportCount = pending?.entries?.size,
+            pendingImport = pending?.let { import ->
+                BackupImportPreview(
+                    importedEntryCount = import.payload.entries.size,
+                    currentEntryCount = import.currentEntryCount,
+                    firstDate = import.payload.entries.minOfOrNull { it.date },
+                    lastDate = import.payload.entries.maxOfOrNull { it.date },
+                )
+            },
             error = error,
         )
     }.stateIn(
@@ -105,16 +125,20 @@ internal class BackupViewModel(
     fun importBackup(stream: InputStream) {
         runOperation(BackupOperationError.IMPORT, body = {
             pendingImport.value = withContext(Dispatchers.IO) {
-                stream.use { input ->
+                val payload = stream.use { input ->
                     val bytes = input.readBounded(backupDocumentSerializer.maxBackupSizeBytes)
                     backupDocumentSerializer.decodeBackup(bytes.decodeToString())
                 }
+                PendingImport(
+                    payload = payload,
+                    currentEntryCount = workEntryRepository.getAll().size,
+                )
             }
         })
     }
 
     fun confirmImport() {
-        val data = pendingImport.value ?: return
+        val data = pendingImport.value?.payload ?: return
         importUndoSnapshot = null
         runOperation(BackupOperationError.IMPORT, supersede = true, body = {
             val oldEntries = workEntryRepository.getAll()

@@ -23,6 +23,8 @@ class DayEditorStateTest {
         assertEquals(0, parseDurationMinutes(""))
         assertEquals(8 * 60, parseDurationMinutes("8"))
         assertEquals(8 * 60 + 30, parseDurationMinutes("8:30"))
+        assertEquals(1, parseDurationMinutes("0:01"))
+        assertEquals(23 * 60 + 59, parseDurationMinutes("23:59"))
         assertEquals(24 * 60, parseDurationMinutes("24"))
         assertNull(parseDurationMinutes("24:01"))
         assertNull(parseDurationMinutes("25"))

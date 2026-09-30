@@ -15,8 +15,8 @@ import com.worktime.app.domain.model.MonthSummary
 import com.worktime.app.domain.preferences.ThemeMode
 import com.worktime.app.domain.repository.UserPreferencesRepository
 import com.worktime.app.domain.repository.WorkEntryRepository
-import com.worktime.app.ui.format.formatDurationCompact
 import com.worktime.app.ui.format.formatAmountMicros
+import com.worktime.app.ui.format.formatDurationSummaryParts
 import java.time.Duration
 import java.time.YearMonth
 import java.time.ZoneId
@@ -251,10 +251,12 @@ private fun widgetSummaryLine(context: Context, summary: MonthSummary): String {
         summary.shiftCount,
         summary.shiftCount,
     )
-    val hours = context.getString(
-        R.string.hours_short,
-        formatDurationCompact(summary.workedMinutes),
-    )
+    val duration = formatDurationSummaryParts(summary.workedMinutes)
+    val hours = if (duration.minutes == 0) {
+        context.getString(R.string.duration_hours, duration.hours)
+    } else {
+        context.getString(R.string.duration_hours_minutes, duration.hours, duration.minutes)
+    }
     val income = context.getString(
         R.string.amount_with_currency,
         formatAmountMicros(summary.totalPayMicros),

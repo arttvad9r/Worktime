@@ -39,6 +39,32 @@ class BackupCodecTest {
     }
 
     @Test
+    fun `round trip preserves cross year boundary entries and fractional rates`() {
+        val boundaryEntries = listOf(
+            WorkEntry(
+                date = LocalDate.of(2025, 12, 31),
+                workedMinutes = 1,
+                hourlyRateMicros = 123_450_000L,
+                bonusMicros = 5_250_000L,
+            ),
+            WorkEntry(
+                date = LocalDate.of(2026, 1, 1),
+                workedMinutes = 24 * 60,
+                hourlyRateMicros = 370_125_000L,
+                penaltyMicros = 750_000L,
+            ),
+        )
+
+        val restored = BackupCodec.decode(
+            BackupCodec.encode(boundaryEntries, preferences, defaultRateInitialized = true),
+        )
+
+        assertEquals(boundaryEntries, restored.entries)
+        assertEquals(preferences, restored.preferences)
+        assertTrue(restored.defaultRateInitialized)
+    }
+
+    @Test
     fun `round trip preserves explicitly initialized zero default rate`() {
         val text = BackupCodec.encode(
             entries = emptyList(),

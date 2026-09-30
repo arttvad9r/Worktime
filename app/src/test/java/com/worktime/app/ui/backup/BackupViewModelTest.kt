@@ -104,7 +104,11 @@ class BackupViewModelTest {
         )
 
         viewModel.importBackup(serializer.inputFor(payload))
-        assertEquals(1, viewModel.state.first { it.pendingImportCount != null }.pendingImportCount)
+        val preview = requireNotNull(viewModel.state.first { it.pendingImport != null }.pendingImport)
+        assertEquals(1, preview.importedEntryCount)
+        assertEquals(1, preview.currentEntryCount)
+        assertEquals(importedEntry.date, preview.firstDate)
+        assertEquals(importedEntry.date, preview.lastDate)
         assertEquals(0, workRepository.replaceAllCalls)
 
         viewModel.confirmImport()
@@ -112,7 +116,7 @@ class BackupViewModelTest {
         assertEquals(listOf(importedEntry), workRepository.entries.value)
         assertEquals(UserPreferences(7_000_000L, ThemeMode.LIGHT), preferencesRepository.preferences.first())
         assertEquals(true, preferencesRepository.initialized)
-        assertNull(viewModel.state.first { it.pendingImportCount == null }.pendingImportCount)
+        assertNull(viewModel.state.first { it.pendingImport?.importedEntryCount == null }.pendingImport?.importedEntryCount)
     }
 
     @Test
@@ -131,7 +135,7 @@ class BackupViewModelTest {
         )
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.confirmImport()
         assertEquals(BackupOperationEvent.Success.IMPORTED, viewModel.events.first())
 
@@ -158,7 +162,7 @@ class BackupViewModelTest {
         )
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.confirmImport()
 
         assertEquals(BackupOperationEvent.Success.IMPORTED, viewModel.events.first())
@@ -178,10 +182,10 @@ class BackupViewModelTest {
         )
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.cancelImport()
 
-        assertNull(viewModel.state.first { it.pendingImportCount == null }.pendingImportCount)
+        assertNull(viewModel.state.first { it.pendingImport?.importedEntryCount == null }.pendingImport?.importedEntryCount)
         assertEquals(0, workRepository.replaceAllCalls)
     }
 
@@ -199,14 +203,14 @@ class BackupViewModelTest {
         )
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.confirmImport()
 
         assertEquals(
             BackupOperationEvent.Error(BackupOperationError.IMPORT),
             viewModel.events.first(),
         )
-        assertEquals(1, viewModel.state.value.pendingImportCount)
+        assertEquals(1, viewModel.state.value.pendingImport?.importedEntryCount)
     }
 
     @Test
@@ -222,7 +226,7 @@ class BackupViewModelTest {
         val payload = BackupPayload(listOf(importedEntry), UserPreferences(), true)
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.confirmImport()
 
         assertEquals(
@@ -230,7 +234,7 @@ class BackupViewModelTest {
             viewModel.events.first(),
         )
         assertEquals(listOf(oldEntry), workRepository.entries.value)
-        assertEquals(1, viewModel.state.value.pendingImportCount)
+        assertEquals(1, viewModel.state.value.pendingImport?.importedEntryCount)
     }
 
     @Test
@@ -246,7 +250,7 @@ class BackupViewModelTest {
         val payload = BackupPayload(listOf(importedEntry), UserPreferences(), true)
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.confirmImport()
         assertEquals(
             Unit,
@@ -260,7 +264,7 @@ class BackupViewModelTest {
         assertEquals(listOf(oldEntry), workRepository.entries.value)
         assertEquals(UserPreferences(), preferencesRepository.preferences.first())
         assertEquals(false, preferencesRepository.initialized)
-        assertEquals(1, viewModel.state.value.pendingImportCount)
+        assertEquals(1, viewModel.state.value.pendingImport?.importedEntryCount)
         assertNull(viewModel.state.value.error)
         assertNull(withTimeoutOrNull(50) { viewModel.events.first() })
     }
@@ -281,7 +285,7 @@ class BackupViewModelTest {
         )
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.confirmImport()
 
         assertEquals(
@@ -289,7 +293,7 @@ class BackupViewModelTest {
             viewModel.events.first(),
         )
         assertEquals(listOf(oldEntry), workRepository.entries.value)
-        assertEquals(1, viewModel.state.value.pendingImportCount)
+        assertEquals(1, viewModel.state.value.pendingImport?.importedEntryCount)
     }
 
     @Test
@@ -305,7 +309,7 @@ class BackupViewModelTest {
         val payload = BackupPayload(listOf(importedEntry), UserPreferences(), true)
 
         viewModel.importBackup(serializer.inputFor(payload))
-        viewModel.state.first { it.pendingImportCount != null }
+        viewModel.state.first { it.pendingImport?.importedEntryCount != null }
         viewModel.confirmImport()
 
         assertEquals(
@@ -313,7 +317,7 @@ class BackupViewModelTest {
             viewModel.events.first(),
         )
         assertEquals(listOf(oldEntry), workRepository.entries.value)
-        assertEquals(1, viewModel.state.value.pendingImportCount)
+        assertEquals(1, viewModel.state.value.pendingImport?.importedEntryCount)
     }
 
     @Test
@@ -332,7 +336,7 @@ class BackupViewModelTest {
             viewModel.events.first(),
         )
         assertEquals(0, workRepository.replaceAllCalls)
-        assertNull(viewModel.state.value.pendingImportCount)
+        assertNull(viewModel.state.value.pendingImport?.importedEntryCount)
     }
 
     @Test

@@ -10,8 +10,8 @@
     <string name="monthly_summary">Сводка за месяц</string>
     <string name="worked_duration">Отработано часов</string>
     <string name="shift_count_label">Рабочих дней</string>
-    <string name="duration_hours">%1$d ч</string>
-    <string name="duration_hours_minutes">%1$d ч %2$d мин</string>
+    <string name="duration_hours">%1$s ч</string>
+    <string name="duration_hours_minutes">%1$s ч %2$d мин</string>
     <string name="hours_short">%1$s ч</string>
     <string name="today">Сегодня</string>
     <string name="fill_today">Заполнить сегодня</string>
@@ -98,6 +98,7 @@
     <string name="backup_import_rollback_failed">Импорт не завершён: не удалось восстановить прежние данные.</string>
     <string name="default_rate_adoption_failed">Смена сохранена, но ставку по умолчанию не удалось обновить.</string>
     <string name="import_confirmation_title">Заменить все данные?</string>
+    <string name="import_confirmation_period">Период: %1$s — %2$s</string>
     <string name="replace">Заменить</string>
 
     <string name="amount_with_currency">%1$s ₽</string>
@@ -109,10 +110,16 @@
         <item quantity="other">%1$d смены</item>
     </plurals>
     <plurals name="import_confirmation_text">
-        <item quantity="one">В файле %1$d запись. Текущие записи и настройки будут заменены.</item>
-        <item quantity="few">В файле %1$d записи. Текущие записи и настройки будут заменены.</item>
-        <item quantity="many">В файле %1$d записей. Текущие записи и настройки будут заменены.</item>
-        <item quantity="other">В файле %1$d записи. Текущие записи и настройки будут заменены.</item>
+        <item quantity="one">В файле %1$d запись.</item>
+        <item quantity="few">В файле %1$d записи.</item>
+        <item quantity="many">В файле %1$d записей.</item>
+        <item quantity="other">В файле %1$d записи.</item>
+    </plurals>
+    <plurals name="import_replacement_warning">
+        <item quantity="one">Текущие данные (%1$d запись) и настройки приложения будут заменены.</item>
+        <item quantity="few">Текущие данные (%1$d записи) и настройки приложения будут заменены.</item>
+        <item quantity="many">Текущие данные (%1$d записей) и настройки приложения будут заменены.</item>
+        <item quantity="other">Текущие данные (%1$d записи) и настройки приложения будут заменены.</item>
     </plurals>
     <plurals name="change_rate_confirmation_text">
         <item quantity="one">Ставка изменится для %1$d записи выбранного периода. Ставка по умолчанию останется прежней.</item>

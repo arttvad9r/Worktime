@@ -42,7 +42,7 @@ import com.worktime.app.ui.components.AppDimens
 import com.worktime.app.ui.components.AppMotion
 import com.worktime.app.ui.components.AppTopBar
 import com.worktime.app.ui.format.formatAmountMicros
-import com.worktime.app.ui.format.formatDurationCompact
+import com.worktime.app.ui.format.formatDurationSummaryParts
 import com.worktime.app.ui.theme.semanticColors
 import java.time.Month
 import java.util.Locale
@@ -50,7 +50,7 @@ import kotlin.math.abs
 import java.time.format.TextStyle as JavaTextStyle
 
 private val MonthLabelWidth = 44.dp
-private val AmountColumnWidth = 96.dp
+private val AmountColumnWidth = 108.dp
 private val BarHeight = 8.dp
 
 @Composable
@@ -140,6 +140,12 @@ private fun YearSummaryContent(
     val semantic = MaterialTheme.semanticColors
     val total = summary.total
     val maxAbs = summary.months.maxOfOrNull { abs(it.totalPayMicros) } ?: 0L
+    val duration = formatDurationSummaryParts(total.workedMinutes, locale)
+    val durationText = if (duration.minutes == 0) {
+        stringResource(R.string.duration_hours, duration.hours)
+    } else {
+        stringResource(R.string.duration_hours_minutes, duration.hours, duration.minutes)
+    }
 
     Column(
         modifier = Modifier
@@ -163,8 +169,7 @@ private fun YearSummaryContent(
                 maxLines = 1,
             )
             Text(
-                text = "${pluralStringResource(R.plurals.shifts_short, total.shiftCount, total.shiftCount)} · " +
-                    stringResource(R.string.hours_short, formatDurationCompact(total.workedMinutes)),
+                text = "${pluralStringResource(R.plurals.shifts_short, total.shiftCount, total.shiftCount)} · $durationText",
                 style = MaterialTheme.typography.bodyMedium,
                 color = colors.onSurfaceVariant,
             )
@@ -172,7 +177,10 @@ private fun YearSummaryContent(
                 Text(
                     text = stringResource(
                         R.string.year_average_month,
-                        formatAmountMicros(total.totalPayMicros / summary.monthsWithData, locale),
+                        stringResource(
+                            R.string.amount_with_currency,
+                            formatAmountMicros(total.totalPayMicros / summary.monthsWithData, locale),
+                        ),
                     ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colors.onSurfaceVariant,
@@ -182,14 +190,14 @@ private fun YearSummaryContent(
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (total.bonusMicros > 0L) {
                         Text(
-                            text = "+${formatAmountMicros(total.bonusMicros, locale)}",
+                            text = "+${stringResource(R.string.amount_with_currency, formatAmountMicros(total.bonusMicros, locale))}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = semantic.positive,
                         )
                     }
                     if (total.penaltyMicros > 0L) {
                         Text(
-                            text = "−${formatAmountMicros(total.penaltyMicros, locale)}",
+                            text = "−${stringResource(R.string.amount_with_currency, formatAmountMicros(total.penaltyMicros, locale))}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = semantic.negative,
                         )
@@ -209,7 +217,10 @@ private fun YearSummaryContent(
                     modifier = Modifier.testTag("year-summary-month-${month.value}"),
                     label = monthLabel(month, locale),
                     fraction = if (maxAbs == 0L) 0f else abs(monthTotal.totalPayMicros).toFloat() / maxAbs,
-                    amount = formatAmountMicros(monthTotal.totalPayMicros, locale),
+                    amount = stringResource(
+                        R.string.amount_with_currency,
+                        formatAmountMicros(monthTotal.totalPayMicros, locale),
+                    ),
                     barColor = if (monthTotal.totalPayMicros < 0L) colors.error else colors.primary,
                 )
             }

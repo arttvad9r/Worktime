@@ -107,8 +107,9 @@ internal fun DayEditorSheetContent(
         if (!operationErrorMessage.isNullOrBlank()) snackbarHostState.showSnackbar(operationErrorMessage)
     }
 
-    val next = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
-    val done = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done)
+    val durationNext = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next)
+    val moneyNext = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next)
+    val moneyDone = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done)
 
     AppModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -134,7 +135,7 @@ internal fun DayEditorSheetContent(
                     placeholder = { Text(stringResource(R.string.duration_placeholder)) },
                     isError = editor.durationError,
                     inputTransformation = durationTransformation,
-                    keyboardOptions = next,
+                    keyboardOptions = durationNext,
                     onKeyboardAction = { rateFocus.requestFocus() },
                     lineLimits = TextFieldLineLimits.SingleLine,
                 )
@@ -164,7 +165,7 @@ internal fun DayEditorSheetContent(
                     label = { Text(stringResource(R.string.hourly_rate)) },
                     isError = editor.rateError,
                     inputTransformation = moneyTransformation,
-                    keyboardOptions = next,
+                    keyboardOptions = moneyNext,
                     onKeyboardAction = { bonusFocus.requestFocus() },
                     lineLimits = TextFieldLineLimits.SingleLine,
                 )
@@ -178,7 +179,7 @@ internal fun DayEditorSheetContent(
                         label = { Text(stringResource(R.string.bonus)) },
                         isError = editor.bonusError,
                         inputTransformation = moneyTransformation,
-                        keyboardOptions = next,
+                        keyboardOptions = moneyNext,
                         onKeyboardAction = { penaltyFocus.requestFocus() },
                         lineLimits = TextFieldLineLimits.SingleLine,
                     )
@@ -191,7 +192,7 @@ internal fun DayEditorSheetContent(
                         label = { Text(stringResource(R.string.penalty)) },
                         isError = editor.penaltyError,
                         inputTransformation = moneyTransformation,
-                        keyboardOptions = done,
+                        keyboardOptions = moneyDone,
                         onKeyboardAction = {
                             editor.entry?.takeIf { editor.canSave }?.let(onSave) ?: focusManager.clearFocus()
                         },

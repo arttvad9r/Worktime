@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.worktime.app.R
 import com.worktime.app.domain.model.MonthSummary
 import com.worktime.app.ui.format.formatAmountMicros
-import com.worktime.app.ui.format.formatDurationCompact
+import com.worktime.app.ui.format.formatDurationSummaryParts
 import com.worktime.app.ui.theme.semanticColors
 import java.util.Locale
 
@@ -39,10 +39,18 @@ internal fun MonthlySummaryCard(
         formatAmountMicros(summary.totalPayMicros, locale),
     )
     val shifts = pluralStringResource(R.plurals.shifts_short, summary.shiftCount, summary.shiftCount)
-    val hours = stringResource(R.string.hours_short, formatDurationCompact(summary.workedMinutes))
+    val duration = formatDurationSummaryParts(summary.workedMinutes, locale)
+    val hours = if (duration.minutes == 0) {
+        stringResource(R.string.duration_hours, duration.hours)
+    } else {
+        stringResource(R.string.duration_hours_minutes, duration.hours, duration.minutes)
+    }
     val base = stringResource(R.string.calculation_base)
     val bonus = stringResource(R.string.calculation_bonus)
     val penalty = stringResource(R.string.calculation_penalty)
+    val baseAmount = stringResource(R.string.amount_with_currency, formatAmountMicros(summary.basePayMicros, locale))
+    val bonusAmount = stringResource(R.string.amount_with_currency, formatAmountMicros(summary.bonusMicros, locale))
+    val penaltyAmount = stringResource(R.string.amount_with_currency, formatAmountMicros(summary.penaltyMicros, locale))
     val hasAdjustments = summary.bonusMicros > 0L || summary.penaltyMicros > 0L
     val semantic = MaterialTheme.semanticColors
 
@@ -86,14 +94,14 @@ internal fun MonthlySummaryCard(
                 if (hasAdjustments) {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text(
-                            text = "$base ${formatAmountMicros(summary.basePayMicros, locale)}",
+                            text = "$base $baseAmount",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                         )
                         if (summary.bonusMicros > 0L) {
                             Text(
-                                text = "$bonus +${formatAmountMicros(summary.bonusMicros, locale)}",
+                                text = "$bonus +$bonusAmount",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = semantic.positive,
                                 maxLines = 1,
@@ -101,7 +109,7 @@ internal fun MonthlySummaryCard(
                         }
                         if (summary.penaltyMicros > 0L) {
                             Text(
-                                text = "$penalty −${formatAmountMicros(summary.penaltyMicros, locale)}",
+                                text = "$penalty −$penaltyAmount",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = semantic.negative,
                                 maxLines = 1,

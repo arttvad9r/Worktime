@@ -10,8 +10,8 @@
     <string name="monthly_summary">Monthly summary</string>
     <string name="worked_duration">Hours worked</string>
     <string name="shift_count_label">Work days</string>
-    <string name="duration_hours">%1$d h</string>
-    <string name="duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="duration_hours">%1$s h</string>
+    <string name="duration_hours_minutes">%1$s h %2$d min</string>
     <string name="hours_short">%1$s h</string>
     <string name="today">Today</string>
     <string name="fill_today">Fill today</string>
@@ -98,6 +98,7 @@
     <string name="backup_import_rollback_failed">Import failed: previous data could not be restored.</string>
     <string name="default_rate_adoption_failed">Entry saved, but the default rate could not be updated.</string>
     <string name="import_confirmation_title">Replace all data?</string>
+    <string name="import_confirmation_period">Period: %1$s — %2$s</string>
     <string name="replace">Replace</string>
 
     <string name="amount_with_currency">%1$s ₽</string>
@@ -107,8 +108,12 @@
         <item quantity="other">%1$d shifts</item>
     </plurals>
     <plurals name="import_confirmation_text">
-        <item quantity="one">The file contains %1$d entry. Current entries and settings will be replaced.</item>
-        <item quantity="other">The file contains %1$d entries. Current entries and settings will be replaced.</item>
+        <item quantity="one">The file contains %1$d entry.</item>
+        <item quantity="other">The file contains %1$d entries.</item>
+    </plurals>
+    <plurals name="import_replacement_warning">
+        <item quantity="one">Current data (%1$d entry) and app settings will be replaced.</item>
+        <item quantity="other">Current data (%1$d entries) and app settings will be replaced.</item>
     </plurals>
     <plurals name="change_rate_confirmation_text">
         <item quantity="one">The rate will change for %1$d entry in the selected period. The default rate will stay unchanged.</item>

@@ -10,9 +10,11 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.worktime.app.R
+import com.worktime.app.ui.backup.BackupImportPreview
 import com.worktime.app.ui.backup.BackupUiState
 import com.worktime.app.ui.backup.BackupViewModel
 import com.worktime.app.ui.calendar.CalendarOperationError
@@ -21,6 +23,8 @@ import com.worktime.app.ui.calendar.CalendarViewModel
 import com.worktime.app.ui.dayeditor.DayEditorSheet
 import com.worktime.app.ui.preferences.PreferencesUiState
 import com.worktime.app.ui.settings.ChangeRateSheet
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 
 @Composable
 internal fun BoxScope.AppOverlays(
@@ -66,9 +70,9 @@ internal fun BoxScope.AppOverlays(
         )
     }
 
-    backupState.pendingImportCount?.let { pendingCount ->
+    backupState.pendingImport?.let { preview ->
         ImportConfirmationDialog(
-            pendingCount = pendingCount,
+            preview = preview,
             onConfirm = {
                 calendarViewModel.prepareForExternalDataReplacement()
                 backupViewModel.confirmImport()
@@ -87,16 +91,42 @@ internal fun BoxScope.AppOverlays(
 
 @Composable
 private fun ImportConfirmationDialog(
-    pendingCount: Int,
+    preview: BackupImportPreview,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val locale = LocalLocale.current.platformLocale
+    val formatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale)
+    val details = buildList {
+        add(
+            pluralStringResource(
+                R.plurals.import_confirmation_text,
+                preview.importedEntryCount,
+                preview.importedEntryCount,
+            ),
+        )
+        if (preview.firstDate != null && preview.lastDate != null) {
+            add(
+                stringResource(
+                    R.string.import_confirmation_period,
+                    preview.firstDate.format(formatter),
+                    preview.lastDate.format(formatter),
+                ),
+            )
+        }
+        add(
+            pluralStringResource(
+                R.plurals.import_replacement_warning,
+                preview.currentEntryCount,
+                preview.currentEntryCount,
+            ),
+        )
+    }.joinToString("\n\n")
+
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.import_confirmation_title)) },
-        text = {
-            Text(pluralStringResource(R.plurals.import_confirmation_text, pendingCount, pendingCount))
-        },
+        text = { Text(details) },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text(stringResource(R.string.replace)) }
         },
