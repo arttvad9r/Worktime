@@ -91,7 +91,7 @@ fun AppSegmentedControl(
                 .fillMaxHeight()
                 .padding(3.dp)
                 .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.secondaryContainer),
+                .background(MaterialTheme.colorScheme.primaryContainer),
         )
 
         Row(
@@ -104,7 +104,7 @@ fun AppSegmentedControl(
                 val interactionSource = remember(index) { MutableInteractionSource() }
                 val contentColor by animateColorAsState(
                     targetValue = if (selected) {
-                        MaterialTheme.colorScheme.onSecondaryContainer
+                        MaterialTheme.colorScheme.onPrimaryContainer
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },

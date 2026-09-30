@@ -66,6 +66,7 @@ internal fun NumericEditorSection(
     rateHasError: Boolean,
     bonusHasError: Boolean,
     penaltyHasError: Boolean,
+    editorHasFocus: Boolean,
     onActivateField: (NumericField) -> Unit,
     onShowBonus: () -> Unit,
     onShowPenalty: () -> Unit,
@@ -165,6 +166,7 @@ internal fun NumericEditorSection(
             rateHasError = rateHasError,
             bonusHasError = bonusHasError,
             penaltyHasError = penaltyHasError,
+            editorHasFocus = editorHasFocus,
             keyboardOptions = numericKeyboardOptions,
             onNext = onNext,
             editorFocusRequester = editorFocusRequester,
@@ -278,6 +280,7 @@ private fun PersistentNumericEditor(
     rateHasError: Boolean,
     bonusHasError: Boolean,
     penaltyHasError: Boolean,
+    editorHasFocus: Boolean,
     keyboardOptions: KeyboardOptions,
     onNext: () -> Unit,
     editorFocusRequester: FocusRequester,
@@ -308,7 +311,7 @@ private fun PersistentNumericEditor(
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
         )
-        CompactInputChrome(isError = isError) {
+        CompactInputChrome(isError = isError, isFocused = editorHasFocus) {
             BasicTextField(
                 state = state,
                 inputTransformation = if (isDuration) durationInputTransformation else moneyInputTransformation,

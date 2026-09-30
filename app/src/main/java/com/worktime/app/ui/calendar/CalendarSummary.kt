@@ -42,8 +42,8 @@ import com.worktime.app.ui.components.AppNavigationRow
 import com.worktime.app.ui.components.LabelValueRow
 import com.worktime.app.ui.format.formatAmountMicros
 import com.worktime.app.ui.format.formatDurationCompact
+import com.worktime.app.ui.format.formatMonthTitle
 import com.worktime.app.ui.format.formatWholeAmountMicros
-import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
@@ -122,7 +122,7 @@ internal fun SummaryStrip(
                     )
                 }
                 .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.secondaryContainer)
+                .background(MaterialTheme.colorScheme.primaryContainer)
                 .clickable(
                     onClickLabel = stringResource(R.string.monthly_summary),
                     onClick = onClick,
@@ -136,7 +136,7 @@ internal fun SummaryStrip(
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
             )
@@ -144,7 +144,7 @@ internal fun SummaryStrip(
                 Icons.Filled.KeyboardArrowUp,
                 modifier = Modifier.graphicsLayer { rotationZ = chevronRotation },
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
     }
@@ -198,7 +198,7 @@ internal fun MonthlySummaryPanel(
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = state.visibleMonth.format(DateTimeFormatter.ofPattern("LLLL yyyy", locale)),
+                text = formatMonthTitle(state.visibleMonth, locale),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -226,18 +226,27 @@ internal fun MonthlySummaryPanel(
 
             LabelValueRow(
                 label = stringResource(R.string.calculation_base),
-                value = formatAmountMicros(summary.basePayMicros, locale),
+                value = stringResource(
+                    R.string.amount_with_currency,
+                    formatAmountMicros(summary.basePayMicros, locale),
+                ),
             )
             if (summary.bonusMicros > 0L) {
                 LabelValueRow(
                     label = stringResource(R.string.calculation_bonus),
-                    value = "+${formatAmountMicros(summary.bonusMicros, locale)}",
+                    value = "+${stringResource(
+                        R.string.amount_with_currency,
+                        formatAmountMicros(summary.bonusMicros, locale),
+                    )}",
                 )
             }
             if (summary.penaltyMicros > 0L) {
                 LabelValueRow(
                     label = stringResource(R.string.calculation_penalty),
-                    value = "−${formatAmountMicros(summary.penaltyMicros, locale)}",
+                    value = "−${stringResource(
+                        R.string.amount_with_currency,
+                        formatAmountMicros(summary.penaltyMicros, locale),
+                    )}",
                 )
             }
 
@@ -250,7 +259,10 @@ internal fun MonthlySummaryPanel(
                 )
                 LabelValueRow(
                     label = stringResource(R.string.average_shift_income),
-                    value = formatAmountMicros(summary.totalPayMicros / summary.shiftCount, locale),
+                    value = stringResource(
+                        R.string.amount_with_currency,
+                        formatAmountMicros(summary.totalPayMicros / summary.shiftCount, locale),
+                    ),
                 )
             }
 

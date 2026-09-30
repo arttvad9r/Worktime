@@ -1,5 +1,7 @@
 package com.worktime.app.ui.calendar
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +17,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.worktime.app.R
 import com.worktime.app.domain.calculation.SalaryCalculator
+import com.worktime.app.ui.components.AppMotion
 import com.worktime.app.domain.model.WorkEntry
 import com.worktime.app.ui.format.formatAmountMicros
 import com.worktime.app.ui.format.formatDurationCompact
@@ -199,6 +203,14 @@ private fun DayCell(
         visibleEntry != null -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.58f)
         else -> Color.Transparent
     }
+    val animatedBackgroundColor by animateColorAsState(
+        targetValue = backgroundColor,
+        animationSpec = tween(
+            durationMillis = AppMotion.FastMillis,
+            easing = AppMotion.StandardEasing,
+        ),
+        label = "calendar-day-background",
+    )
 
     Box(
         modifier = Modifier
@@ -208,7 +220,7 @@ private fun DayCell(
                 brush = SolidColor(borderColor),
                 shape = RectangleShape,
             )
-            .background(backgroundColor)
+            .background(animatedBackgroundColor)
             .semantics(mergeDescendants = true) { contentDescription = a11yDescription }
             .then(
                 if (isLastGridRow && isInVisibleMonth) Modifier.testTag("calendar-last-row-day")

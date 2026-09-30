@@ -50,8 +50,8 @@ import com.worktime.app.ui.components.AppMotion
 import com.worktime.app.ui.components.AppTopBar
 import com.worktime.app.ui.format.formatAmountMicros
 import com.worktime.app.ui.format.formatDurationCompact
+import com.worktime.app.ui.format.formatMonthAbbreviation
 import java.time.Month
-import java.time.format.TextStyle as JavaTextStyle
 
 private const val MonthLabelWeight = 1.2f
 private const val MonthDetailWeight = 1.2f
@@ -241,9 +241,12 @@ private fun YearSummaryContent(
         if (summary.monthsWithData > 0) {
             YearMetricRow(
                 label = stringResource(R.string.average_working_month),
-                value = formatAmountMicros(
-                    summary.total.totalPayMicros / summary.monthsWithData,
-                    locale,
+                value = stringResource(
+                    R.string.amount_with_currency,
+                    formatAmountMicros(
+                        summary.total.totalPayMicros / summary.monthsWithData,
+                        locale,
+                    ),
                 ),
                 style = metricStyle,
             )
@@ -260,14 +263,20 @@ private fun YearSummaryContent(
         if (summary.total.bonusMicros > 0L) {
             YearMetricRow(
                 label = stringResource(R.string.year_bonuses),
-                value = "+${formatAmountMicros(summary.total.bonusMicros, locale)}",
+                value = "+${stringResource(
+                    R.string.amount_with_currency,
+                    formatAmountMicros(summary.total.bonusMicros, locale),
+                )}",
                 style = metricStyle,
             )
         }
         if (summary.total.penaltyMicros > 0L) {
             YearMetricRow(
                 label = stringResource(R.string.calculation_penalty),
-                value = "−${formatAmountMicros(summary.total.penaltyMicros, locale)}",
+                value = "−${stringResource(
+                    R.string.amount_with_currency,
+                    formatAmountMicros(summary.total.penaltyMicros, locale),
+                )}",
                 style = metricStyle,
             )
         }
@@ -437,4 +446,4 @@ private fun MonthLine(
 }
 
 private fun monthDisplayName(month: Month, locale: java.util.Locale): String =
-    month.getDisplayName(JavaTextStyle.SHORT, locale).replaceFirstChar { it.uppercase(locale) }
+    formatMonthAbbreviation(month, locale)

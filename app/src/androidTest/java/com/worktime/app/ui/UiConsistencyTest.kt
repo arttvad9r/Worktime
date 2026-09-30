@@ -133,6 +133,7 @@ class UiConsistencyTest {
                         rateHasError = false,
                         bonusHasError = false,
                         penaltyHasError = false,
+                        editorHasFocus = false,
                         onActivateField = { activeField = it },
                         onShowBonus = {
                             bonusVisible = true

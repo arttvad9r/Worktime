@@ -44,12 +44,12 @@ import com.worktime.app.ui.components.AppDestructiveAction
 import com.worktime.app.ui.components.AppDimens
 import com.worktime.app.ui.components.AppModalBottomSheet
 import com.worktime.app.ui.components.AppPrimaryButton
+import com.worktime.app.ui.format.formatDateTitle
 import com.worktime.app.ui.format.formatDecimalMicros
 import com.worktime.app.ui.format.formatDurationCompact
 import com.worktime.app.ui.format.parseDecimalMicros
 import com.worktime.app.ui.format.sanitizeMoneyInput
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
@@ -229,9 +229,7 @@ internal fun DayEditorSheetContent(
 
     AppModalBottomSheet(
         onDismissRequest = onDismiss,
-        title = date.format(
-            DateTimeFormatter.ofPattern("EEEE, d MMMM", LocalLocale.current.platformLocale),
-        ),
+        title = formatDateTitle(date, LocalLocale.current.platformLocale),
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(
@@ -257,6 +255,7 @@ internal fun DayEditorSheetContent(
                     rateHasError = rateHasError,
                     bonusHasError = bonusHasError,
                     penaltyHasError = penaltyHasError,
+                    editorHasFocus = editorHasFocus,
                     onActivateField = activateField,
                     onShowBonus = showBonus,
                     onShowPenalty = showPenalty,
