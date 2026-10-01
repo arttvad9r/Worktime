@@ -37,7 +37,7 @@ Do not report a build, test or device result as passed unless the command/test a
 
 ## UI expectations
 
-- The application is portrait-only.
+- The application is portrait-first, not portrait-locked: rotation and window resizing must stay usable (see `docs/DECISIONS.md`).
 - The calendar geometry is fixed and must not depend on monthly data.
 - Normal day entry should fit without scrolling when the keyboard is closed.
 - Numeric focus changes must not intentionally clear/reopen the IME or animate the sheet height.
