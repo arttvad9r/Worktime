@@ -16,6 +16,7 @@ Local-first Android salary calendar: log hours/rate/bonus/penalty per day, see m
 - Build details and toolchain: `docs/BUILD.md`
 
 ## Rules not obvious from the code
+- Release signing key and passwords live in git-ignored `keystore/` (see `docs/RELEASE_SIGNING.md`); never commit it or print its contents.
 - Instrumentation runs only against `com.worktime.app.debug`; never against the production package (cleanup would wipe real user data).
 - Several worktrees exist (`Worktime`, `Worktime-main`, `Worktime-*-polish`, `Worktime-release`); `main` is the source of truth for docs and behavior.
 

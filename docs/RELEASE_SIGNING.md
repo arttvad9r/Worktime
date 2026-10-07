@@ -6,6 +6,24 @@ That key is a long-lived release identity. Every future APK intended to update a
 
 The keystore and passwords must never be committed to this repository, uploaded to GitHub Actions, or pasted into issue/PR logs. The project reads signing inputs from Gradle properties or `RELEASE_*` environment variables and never falls back to debug signing.
 
+## Where the key lives
+
+Everything secret sits in the git-ignored `keystore/` directory at the repository root:
+
+```text
+keystore/worktime-release.jks   # production app-signing keystore
+keystore/worktime-release.env   # RELEASE_STORE_FILE / _ALIAS / _STORE_PASSWORD / _KEY_PASSWORD
+```
+
+On the maintainer machine the env file makes a local build one command (run from the repository root):
+
+```bash
+set -a; . keystore/worktime-release.env; set +a
+./scripts/build_release_candidate.sh
+```
+
+`keystore/` is copied to the encrypted offline backup by `keys-backup`. A new `git worktree` does not contain it; copy the directory in when a release is built from a worktree.
+
 ## Production signing identity
 
 The public SHA-256 fingerprint of the production signing certificate is pinned in:
@@ -25,9 +43,9 @@ CI uses a disposable certificate only in the explicitly isolated `WORKTIME_SIGNI
 Create the keystore locally on a trusted machine. The command prompts for secrets instead of putting passwords in shell history:
 
 ```bash
-mkdir -p "$HOME/.android/keys"
+mkdir -p keystore && chmod 700 keystore
 keytool -genkeypair -v \
-  -keystore "$HOME/.android/keys/worktime-release.jks" \
+  -keystore "keystore/worktime-release.jks" \
   -storetype JKS \
   -alias worktime-release \
   -keyalg RSA \
@@ -41,12 +59,12 @@ Export and archive the public certificate and its SHA-256 fingerprint. The certi
 
 ```bash
 keytool -export -rfc \
-  -keystore "$HOME/.android/keys/worktime-release.jks" \
+  -keystore "keystore/worktime-release.jks" \
   -alias worktime-release \
-  -file "$HOME/.android/keys/worktime-release-certificate.pem"
+  -file "keystore/worktime-release-certificate.pem"
 
 keytool -list -v \
-  -keystore "$HOME/.android/keys/worktime-release.jks" \
+  -keystore "keystore/worktime-release.jks" \
   -alias worktime-release
 ```
 
@@ -57,7 +75,7 @@ Compare the displayed SHA-256 value with `release/production-signing-cert-sha256
 Use the exact clean commit that passed CI. Set the path and alias normally; enter passwords interactively:
 
 ```bash
-export RELEASE_STORE_FILE="$HOME/.android/keys/worktime-release.jks"
+export RELEASE_STORE_FILE="$PWD/keystore/worktime-release.jks"
 export RELEASE_KEY_ALIAS="worktime-release"
 
 read -rsp "Keystore password: " RELEASE_STORE_PASSWORD; export RELEASE_STORE_PASSWORD; echo
