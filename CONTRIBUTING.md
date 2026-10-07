@@ -29,7 +29,7 @@ Do not report a build, test or device result as passed unless the command/test a
 
 ## Repository hygiene
 
-- Use short-lived branches for isolated changes and delete them after their work is merged or superseded.
+- Branch from `dev` (`feat/<name>`, `fix/<name>`), merge back into `dev`, and delete the branch and its worktree after it is merged or superseded. `main` receives only releases and hotfixes, each tagged `vX.Y.Z`.
 - Keep `main` and the current documentation as the source of truth; historical implementation snapshots belong in Git history.
 - Close dependency-update pull requests when the same version is already present through another verified change.
 - Keep CI actions pinned to immutable commit SHAs and let Dependabot group routine ecosystem updates instead of accumulating parallel one-package pull requests.

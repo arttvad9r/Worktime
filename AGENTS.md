@@ -17,7 +17,7 @@ Local-first Android salary calendar: log hours/rate/bonus/penalty per day, see m
 
 ## Rules not obvious from the code
 - Instrumentation runs only against `com.worktime.app.debug`; never against the production package (cleanup would wipe real user data).
-- Several worktrees exist (`Worktime`, `Worktime-main`, `Worktime-*-polish`, `Worktime-release`); `main` is the source of truth for docs and behavior.
+- Branches: `main` holds only released code (every merge = release/hotfix + `vX.Y.Z` tag); `dev` is the integration branch and must always build and pass tests. Work goes on `feat/<name>` / `fix/<name>` from `dev`, then merges into `dev` and the branch/worktree is deleted. Hotfix: `hotfix/<name>` from `main`, merge into `main` + tag, then merge `main` back into `dev`.
 
 ## Status
 - 0.1.1 on `main` (2026-10-01): production signing key rotated.
