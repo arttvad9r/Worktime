@@ -30,3 +30,6 @@ keystore.properties
 # OS
 .DS_Store
 Thumbs.db
+
+# Release signing key lives in keystore/ (see docs/RELEASE_SIGNING.md)
+/keystore/

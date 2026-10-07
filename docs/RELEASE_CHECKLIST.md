@@ -19,7 +19,7 @@ Run this checklist against the exact commit and APK that will be published. Prio
 
 ## App-signing key
 
-- [ ] A dedicated WorkTime release keystore exists outside the repository.
+- [ ] A dedicated WorkTime release keystore exists in the git-ignored `keystore/` directory, never in Git.
 - [ ] Keystore and key passwords are stored in a password manager, not source files or shell scripts.
 - [ ] At least two encrypted backups of the release keystore exist in separate locations.
 - [ ] The public signing certificate has been exported and its SHA-256 fingerprint recorded.
