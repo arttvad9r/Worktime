@@ -14,7 +14,7 @@ class CalendarViewModelMainDispatcherExtension : BeforeEachCallback, AfterEachCa
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     override fun beforeEach(context: ExtensionContext) {
-        if (context.requiredTestClass != CalendarViewModelTest::class.java) return
+        if (context.requiredTestClass.packageName != CalendarViewModel::class.java.packageName) return
         Dispatchers.setMain(UnconfinedTestDispatcher())
         mainDispatcherInstalled = true
     }
