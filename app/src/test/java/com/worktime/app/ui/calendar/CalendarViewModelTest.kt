@@ -35,7 +35,7 @@ class CalendarViewModelTest {
             releaseFirstSave = CompletableDeferred()
         }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.saveEntry(first)
@@ -52,7 +52,6 @@ class CalendarViewModelTest {
             repository.entries.value
         }
         assertEquals(listOf(second), finalState)
-        stateJob.cancel()
     }
 
     @Test
@@ -60,7 +59,7 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000, note = "original")
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady && it.entries[entry.date] == entry }
 
         viewModel.deleteEntry(entry.date)
@@ -73,7 +72,6 @@ class CalendarViewModelTest {
 
         assertEquals(listOf(entry), repository.restoredEntries)
         assertFalse(viewModel.state.first { !it.canUndo }.canUndo)
-        stateJob.cancel()
     }
 
     @Test
@@ -81,7 +79,7 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000)
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.entries[entry.date] == entry }
 
         viewModel.deleteEntry(entry.date)
@@ -92,7 +90,6 @@ class CalendarViewModelTest {
         assertFalse(viewModel.state.first { !it.canUndo }.canUndo)
         viewModel.undoLastOperation()
         assertEquals(null, withTimeoutOrNull(50) { viewModel.operationEvents.first() })
-        stateJob.cancel()
     }
 
     @Test
@@ -104,7 +101,7 @@ class CalendarViewModelTest {
         )
         val repository = FakeWorkEntryRepository(entries)
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.changeRateForPeriod(
@@ -122,14 +119,13 @@ class CalendarViewModelTest {
 
         assertEquals(entries.subList(1, 3).toList(), repository.restoredEntries.toList())
         assertFalse(viewModel.state.first { !it.canUndo }.canUndo)
-        stateJob.cancel()
     }
 
     @Test
     fun `failed bulk operation does not expose undo`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList()).apply { bulkError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.changeRateForPeriod(
@@ -146,14 +142,13 @@ class CalendarViewModelTest {
         )
         assertEquals(CalendarOperationEvent.Error(CalendarOperationError.BULK_RATE), viewModel.operationEvents.first())
         assertEquals(null, viewModel.state.value.selectedDate)
-        stateJob.cancel()
     }
 
     @Test
     fun `bulk rate rejects non-positive rates without repository call`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.changeRateForPeriod(LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10), 0L)
@@ -164,7 +159,6 @@ class CalendarViewModelTest {
             CalendarOperationError.BULK_RATE,
             viewModel.state.first { it.operationError == CalendarOperationError.BULK_RATE }.operationError,
         )
-        stateJob.cancel()
     }
 
     @Test
@@ -172,41 +166,38 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000)
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.entries[entry.date] == entry }
 
         viewModel.deleteEntry(entry.date)
 
         assertEquals(CalendarOperationEvent.Success.ENTRY_DELETED, viewModel.operationEvents.first())
         assertEquals(null, withTimeoutOrNull(50) { viewModel.operationEvents.first() })
-        stateJob.cancel()
     }
 
     @Test
     fun `failed delete emits root error and leaves undo unavailable`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList()).apply { deleteError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.deleteEntry(LocalDate.of(2026, 8, 10))
 
         assertEquals(CalendarOperationEvent.Error(CalendarOperationError.DELETE_ENTRY), viewModel.operationEvents.first())
         assertFalse(viewModel.state.value.canUndo)
-        stateJob.cancel()
     }
 
     @Test
     fun `empty bulk update is a no-op without undo`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.changeRateForPeriod(LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10), 20_000_000)
         assertEquals(CalendarOperationEvent.Success.NO_OP, viewModel.operationEvents.first())
         assertFalse(viewModel.state.value.canUndo)
-        stateJob.cancel()
     }
 
     @Test
@@ -215,7 +206,7 @@ class CalendarViewModelTest {
         val replacement = entry.copy(note = "replacement")
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.entries[entry.date] == entry }
 
         viewModel.deleteEntry(entry.date)
@@ -227,7 +218,6 @@ class CalendarViewModelTest {
         viewModel.undoLastOperation()
         assertEquals(null, withTimeoutOrNull(50) { viewModel.operationEvents.first() })
         assertFalse(viewModel.state.value.canUndo)
-        stateJob.cancel()
     }
 
     @Test
@@ -235,7 +225,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferencesRepository = FakeUserPreferencesRepository()
         val viewModel = CalendarViewModel(repository, preferencesRepository)
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.saveEntry(WorkEntry(LocalDate.of(2026, 8, 10), 720, 370_000_000L))
@@ -248,7 +238,6 @@ class CalendarViewModelTest {
             listOf(UserPreferences(370_000_000L, ThemeMode.SYSTEM)),
             preferencesRepository.updates,
         )
-        stateJob.cancel()
     }
 
     @Test
@@ -256,7 +245,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferences = FakeUserPreferencesRepository()
         val viewModel = CalendarViewModel(repository, preferences)
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         preferences.updateThemeMode(ThemeMode.DARK)
@@ -268,7 +257,6 @@ class CalendarViewModelTest {
             preferences.preferences.first { it.defaultHourlyRateMicros == 370_000_000L },
         )
         assertTrue(preferences.initialized)
-        stateJob.cancel()
     }
 
     @Test
@@ -281,7 +269,7 @@ class CalendarViewModelTest {
             defaultRateInitialized = true,
         )
         val viewModel = CalendarViewModel(repository, preferencesRepository)
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.saveEntry(WorkEntry(LocalDate.of(2026, 8, 10), 720, 370_000_000L))
@@ -292,7 +280,6 @@ class CalendarViewModelTest {
             preferencesRepository.updates,
         )
         assertEquals(300_000_000L, preferencesRepository.preferences.first().defaultHourlyRateMicros)
-        stateJob.cancel()
     }
 
     @Test
@@ -301,7 +288,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferences = FakeUserPreferencesRepository().apply { adoptionError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, preferences)
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.saveEntry(entry)
@@ -312,7 +299,6 @@ class CalendarViewModelTest {
         assertEquals(null, withTimeoutOrNull(50) { viewModel.operationEvents.first() })
         assertEquals(null, viewModel.state.value.selectedDate)
         assertEquals(CalendarOperationError.DEFAULT_RATE_ADOPTION, viewModel.state.value.operationError)
-        stateJob.cancel()
     }
 
     @Test
@@ -320,7 +306,7 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val preferences = FakeUserPreferencesRepository()
         val viewModel = CalendarViewModel(repository, preferences)
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.saveEntry(WorkEntry(LocalDate.of(2026, 8, 10), 60, 370_000_000L))
@@ -331,7 +317,6 @@ class CalendarViewModelTest {
         repository.observeMonth(YearMonth.now()).first { it.size == 2 }
 
         assertEquals(0L, preferences.preferences.first().defaultHourlyRateMicros)
-        stateJob.cancel()
     }
 
     @Test
@@ -339,7 +324,7 @@ class CalendarViewModelTest {
         val preferences = FakeUserPreferencesRepository()
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, preferences)
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.saveEntry(WorkEntry(LocalDate.of(2026, 8, 10), 60, 370_000_000L))
@@ -350,7 +335,6 @@ class CalendarViewModelTest {
             370_000_000L,
             preferences.preferences.first { it.defaultHourlyRateMicros > 0L }.defaultHourlyRateMicros,
         )
-        stateJob.cancel()
     }
 
     @Test
@@ -361,7 +345,7 @@ class CalendarViewModelTest {
         )
         val repository = FakeWorkEntryRepository(entries)
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
         viewModel.changeRateForPeriod(entries.first().date, entries.last().date, 20_000_000)
         viewModel.operationEvents.first()
@@ -375,7 +359,6 @@ class CalendarViewModelTest {
         assertEquals(CalendarOperationEvent.Success.OPERATION_UNDONE, viewModel.operationEvents.first())
         assertFalse(viewModel.state.first { !it.canUndo }.canUndo)
         assertEquals(entries, repository.restoredEntries)
-        stateJob.cancel()
     }
 
     @Test
@@ -384,7 +367,7 @@ class CalendarViewModelTest {
             bulkError = IllegalStateException()
         }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.changeRateForPeriod(LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 10), 20_000_000)
@@ -404,14 +387,13 @@ class CalendarViewModelTest {
             viewModel.state.first { it.operationError == CalendarOperationError.UNDO }.operationError,
         )
         assertEquals(null, viewModel.state.value.selectedDate)
-        stateJob.cancel()
     }
 
     @Test
     fun `opening rate period editor exposes the change rate flow`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList())
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.openChangeRate(null)
@@ -421,7 +403,6 @@ class CalendarViewModelTest {
 
         viewModel.dismissChangeRateSheet()
         assertFalse(viewModel.state.first { !it.isChangeRateSheetOpen }.isChangeRateSheetOpen)
-        stateJob.cancel()
     }
 
     @Test
@@ -429,7 +410,7 @@ class CalendarViewModelTest {
         val entry = WorkEntry(LocalDate.of(2026, 8, 10), 480, 10_000_000)
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
         viewModel.openChangeRate(null)
         advanceUntilIdle()
@@ -437,14 +418,13 @@ class CalendarViewModelTest {
         viewModel.changeRateForPeriod(entry.date, entry.date, 20_000_000)
         assertEquals(CalendarOperationEvent.Success.RATE_UPDATED, viewModel.operationEvents.first())
         assertFalse(viewModel.state.first { !it.isChangeRateSheetOpen }.isChangeRateSheetOpen)
-        stateJob.cancel()
     }
 
     @Test
     fun `failed bulk rate update keeps the change rate sheet open`() = runTest {
         val repository = FakeWorkEntryRepository(emptyList()).apply { bulkError = IllegalStateException() }
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
         viewModel.openChangeRate(null)
         advanceUntilIdle()
@@ -454,7 +434,6 @@ class CalendarViewModelTest {
 
         assertEquals(CalendarOperationEvent.Error(CalendarOperationError.BULK_RATE), viewModel.operationEvents.first())
         assertTrue(viewModel.state.first { it.isChangeRateSheetOpen }.isChangeRateSheetOpen)
-        stateJob.cancel()
     }
 
     @Test
@@ -467,7 +446,7 @@ class CalendarViewModelTest {
         repository.restoreStarted = restoreStarted
         repository.releaseRestore = releaseRestore
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
-        val stateJob = launch { viewModel.state.collect() }
+        backgroundScope.launch { viewModel.state.collect() }
         viewModel.state.first { it.isReady }
 
         viewModel.changeRateForPeriod(first.date, first.date, 20_000_000)
@@ -484,7 +463,6 @@ class CalendarViewModelTest {
         viewModel.undoLastOperation()
         assertEquals(CalendarOperationEvent.Success.OPERATION_UNDONE, viewModel.operationEvents.first())
         assertEquals(listOf(second), repository.restoredEntries)
-        stateJob.cancel()
     }
 }
 
