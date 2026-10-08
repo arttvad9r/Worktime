@@ -167,12 +167,17 @@ class CalendarViewModelTest {
         val repository = FakeWorkEntryRepository(listOf(entry))
         val viewModel = CalendarViewModel(repository, FakeUserPreferencesRepository())
         backgroundScope.launch { viewModel.state.collect() }
+        println("TRACE delete-test: waiting initial state")
         viewModel.state.first { it.entries[entry.date] == entry }
+        println("TRACE delete-test: initial state ready")
 
         viewModel.deleteEntry(entry.date)
+        println("TRACE delete-test: delete invoked")
 
         assertEquals(CalendarOperationEvent.Success.ENTRY_DELETED, viewModel.operationEvents.first())
+        println("TRACE delete-test: first event received")
         assertEquals(null, withTimeoutOrNull(50) { viewModel.operationEvents.first() })
+        println("TRACE delete-test: no replay confirmed")
     }
 
     @Test
